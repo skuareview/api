@@ -16,7 +16,7 @@ struct Metric {
 }
 
 #[post("/metrics", format = "json", data = "<metric>")]
-fn helloPost(metric: Json<Metric>) -> String {
+fn metrics(metric: Json<Metric>) -> String {
     format!("print test {:?}", metric)
 }
 
@@ -31,6 +31,6 @@ fn index() -> &'static str {
 fn main() {
     rocket::ignite()
         .attach(LogsDbConn::fairing())
-        .mount("/", routes![index, helloPost])
+        .mount("/", routes![index, metrics])
         .launch();
 }
