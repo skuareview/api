@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+
+  api:
+    container_name: api
+    image: rustlang/rust:nightly
+    environment:
+      ROCKET_ADDRESS: '0.0.0.0'
+      ROCKET_PORT: '8080'
+      ROCKET_LOG: 'normal'
+      ROCKET_DATABASES: '{postgres={url="postgres://postgres:postgres@db/api"}}'
+    build:
+        context: ./
+    volumes:
+      - ./:/app
+      - /app/target
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    command: cargo watch -x run
+
+  db:
+    container_name: db
+    image: postgres:14.2
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'postgres'
+      POSTGRES_DB: 'api'
+      PGDATA: /data/postgres
+    volumes:
+       - db:/data/postgres
+    ports:
+      - "5432:5432"
+    restart: always
+
+volumes:
+    db:
