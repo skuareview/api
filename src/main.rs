@@ -12,7 +12,13 @@ use rocket_contrib::databases::diesel;
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 struct Metric {
-    loads: (String, String, String),
+    load_average_1: String,
+    load_average_2: String,
+    load_average_3: String,
+    memory_used: String,
+    memory_total: String,
+    cpu_temp: String,
+    cpu_load: String,
 }
 
 #[post("/metrics", format = "json", data = "<metric>")]
