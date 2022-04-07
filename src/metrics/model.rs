@@ -18,37 +18,39 @@ pub struct Metric {
     pub cpu_load: Option<String>,
 }
 
-// #[derive(Insertable)]
-// #[table_name = "posts"]
-// pub struct InsertablePost {
-//     pub url: String,
-//     pub title: String,
-//     pub description: Option<String>,
-//     pub image_url: String,
-//     pub date: String,
-//     pub length: Option<i16>,
-// }
+#[derive(Insertable)]
+#[table_name = "metrics"]
+pub struct InsertableMetric {
+    pub load_average_1: Option<String>,
+    pub load_average_2: Option<String>,
+    pub load_average_3: Option<String>,
+    pub memory_used: Option<String>,
+    pub memory_total: Option<String>,
+    pub cpu_temp: Option<String>,
+    pub cpu_load: Option<String>,
+}
 
-// impl InsertablePost {
-//     fn from_post(post: Post) -> InsertablePost {
-//         InsertablePost {
-//             url: post.url,
-//             title: post.title,
-//             description: post.description,
-//             image_url: post.image_url,
-//             date: post.date,
-//             length: post.length,
-//         }
-//     }
-// }
+impl InsertableMetric {
+    fn from_metric(metric: Metric) -> InsertableMetric {
+        InsertableMetric {
+            load_average_1: metric.load_average_1,
+            load_average_2: metric.load_average_2,
+            load_average_3: metric.load_average_3,
+            memory_used: metric.memory_used,
+            memory_total: metric.memory_total,
+            cpu_temp: metric.cpu_temp,
+            cpu_load: metric.cpu_load,
+        }
+    }
+}
 
 impl Metric {
-    // pub fn create(post: Post, connection: &PgConnection) -> QueryResult<Post> {
-    //     diesel::insert_into(posts::table)
-    //         .values(&InsertablePost::from_post(post))
-    //         .execute(connection)?;
-    //     posts::table.order(posts::id.desc()).first(connection)
-    // }
+    pub fn create(metric: Metric, connection: &PgConnection) -> QueryResult<Metric> {
+        diesel::insert_into(metrics::table)
+            .values(&InsertableMetric::from_metric(metric))
+            .execute(connection)?;
+        metrics::table.order(metrics::id.desc()).first(connection)
+    }
 
     pub fn get_all(connection: &PgConnection) -> QueryResult<Vec<Metric>> {
         metrics::table.order(metrics::id).load::<Metric>(connection)

@@ -6,12 +6,12 @@ use rocket_contrib::json::{Json, JsonValue};
 
 use crate::db;
 
-// #[post("/", data = "<post>")]
-// fn create(_key: ApiKey, post: Json<Post>, connection: db::DbConn) -> Result<Json<Post>, Status> {
-//     Post::create(post.into_inner(), &connection)
-//         .map(Json)
-//         .map_err(|_| Status::InternalServerError)
-// }
+#[post("/", data = "<metric>")]
+fn create(metric: Json<Metric>, connection: db::DbConn) -> Result<Json<Metric>, Status> {
+    Metric::create(metric.into_inner(), &connection)
+        .map(Json)
+        .map_err(|_| Status::InternalServerError)
+}
 
 // #[post("/", data = "<post>", rank = 2)]
 // fn create_error(post: Json<Post>) -> Json<JsonValue> {
@@ -31,5 +31,5 @@ fn read(connection: db::DbConn) -> Result<Json<JsonValue>, Status> {
 }
 
 pub fn mount(rocket: rocket::Rocket) -> rocket::Rocket {
-    rocket.mount("/metrics", routes![read])
+    rocket.mount("/metrics", routes![read, create])
 }
