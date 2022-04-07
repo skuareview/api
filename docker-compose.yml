@@ -9,6 +9,7 @@ services:
       ROCKET_PORT: '8080'
       ROCKET_LOG: 'normal'
       ROCKET_DATABASES: '{postgres={url="postgres://postgres:postgres@db/api"}}'
+      DATABASE_URL: 'postgres://postgres:postgres@db/api'
     build:
         context: ./
     volumes:
@@ -31,7 +32,7 @@ services:
     volumes:
        - db:/data/postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     restart: always
 
 volumes:
