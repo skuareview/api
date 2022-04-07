@@ -10,6 +10,8 @@ use serde::Deserialize;
 
 use rocket_contrib::databases::diesel;
 
+mod db;
+
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 struct Metric {
     load_average_1: String,
@@ -21,22 +23,7 @@ struct Metric {
     cpu_load: String,
 }
 
-#[post("/metrics", format = "json", data = "<metric>")]
-fn metrics(metric: Json<Metric>) -> String {
-    format!("print test {:?}", metric)
-}
-
-#[database("postgres")]
-struct LogsDbConn(diesel::PgConnection);
-
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
-}
-
 fn main() {
-    rocket::ignite()
-        .attach(LogsDbConn::fairing())
-        .mount("/", routes![index, metrics])
-        .launch();
+    let mut rocket = rocket::ignite().manage(db::init_pool());
+    rocket.launch();
 }
