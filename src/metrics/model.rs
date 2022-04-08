@@ -18,7 +18,7 @@ pub struct Metric {
     pub cpu_load: Option<String>,
 }
 
-#[derive(Insertable)]
+#[derive(Serialize, Deserialize, Insertable)]
 #[table_name = "metrics"]
 pub struct InsertableMetric {
     pub load_average_1: Option<String>,
@@ -45,9 +45,9 @@ impl InsertableMetric {
 }
 
 impl Metric {
-    pub fn create(metric: Metric, connection: &PgConnection) -> QueryResult<Metric> {
+    pub fn create(metric: InsertableMetric, connection: &PgConnection) -> QueryResult<Metric> {
         diesel::insert_into(metrics::table)
-            .values(&InsertableMetric::from_metric(metric))
+            .values(&metric)
             .execute(connection)?;
         metrics::table.order(metrics::id.desc()).first(connection)
     }

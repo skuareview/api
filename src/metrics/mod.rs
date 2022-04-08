@@ -1,13 +1,13 @@
 pub mod model;
 
-use self::model::Metric;
+use self::model::{InsertableMetric, Metric};
 use rocket::{self, http::Status};
 use rocket_contrib::json::{Json, JsonValue};
 
 use crate::db;
 
 #[post("/", data = "<metric>")]
-fn create(metric: Json<Metric>, connection: db::DbConn) -> Result<Json<Metric>, Status> {
+fn create(metric: Json<InsertableMetric>, connection: db::DbConn) -> Result<Json<Metric>, Status> {
     Metric::create(metric.into_inner(), &connection)
         .map(Json)
         .map_err(|_| Status::InternalServerError)
