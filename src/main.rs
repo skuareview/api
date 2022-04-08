@@ -1,32 +1,32 @@
-#![feature(proc_macro_hygiene, decl_macro)]
-
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate rocket;
-#[macro_use]
-extern crate rocket_contrib;
-
-use rocket_contrib::json::Json;
-use serde::Deserialize;
-
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+// use cdb::get_pool;
 mod db;
-mod metrics;
-pub mod schema;
+#[get("/")]
+async fn hello() -> impl Responder {
+    HttpResponse::Ok().body("Hello world!")
+}
 
-// #[derive(Debug, PartialEq, Eq, Deserialize)]
-// struct Metric {
-//     load_average_1: String,
-//     load_average_2: String,
-//     load_average_3: String,
-//     memory_used: String,
-//     memory_total: String,
-//     cpu_temp: String,
-//     cpu_load: String,
-// }
+#[post("/echo")]
+async fn echo(req_body: String) -> impl Responder {
+    HttpResponse::Ok().body(req_body)
+}
 
-fn main() {
-    let mut rocket = rocket::ignite().manage(db::init_pool());
-    rocket = metrics::mount(rocket);
-    rocket.launch();
+async fn manual_hello() -> impl Responder {
+    HttpResponse::Ok().body("Hey there!")
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    // Instantiate a new connection pool
+    let pool = db::get_pool();
+    HttpServer::new(move || {
+        App::new()
+            .app_data(pool.clone())
+            .service(hello)
+            .service(echo)
+            .route("/hey", web::get().to(manual_hello))
+    })
+    .bind(("0.0.0.0", 8080))?
+    .run()
+    .await
 }
