@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   api:
-    container_name: api
+    container_name: api_actix
     image: rustlang/rust:nightly
     environment:
       ROCKET_ADDRESS: '0.0.0.0'
