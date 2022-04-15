@@ -1,4 +1,12 @@
 table! {
+    agents (id) {
+        id -> Int4,
+        name -> Varchar,
+        token -> Varchar,
+    }
+}
+
+table! {
     metrics (id) {
         id -> Int4,
         load_average_1 -> Nullable<Varchar>,
@@ -10,3 +18,8 @@ table! {
         cpu_load -> Nullable<Varchar>,
     }
 }
+
+allow_tables_to_appear_in_same_query!(
+    agents,
+    metrics,
+);

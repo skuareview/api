@@ -1,21 +1,22 @@
-use self::model::{InsertableMetric, Metric};
+use self::model::{Agent, AgentName};
 use super::DbPool;
 use actix_web::{post, web, Error, HttpResponse};
+
 mod model;
 
 /// Inserts new user with name defined in form.
-#[post("/metrics")]
-pub async fn add_metrics(
+#[post("/agents")]
+pub async fn add_agents(
     pool: web::Data<DbPool>,
-    form: web::Json<InsertableMetric>,
+    agent_name: web::Json<AgentName>,
 ) -> Result<HttpResponse, Error> {
     // use web::block to offload blocking Diesel code without blocking server thread
-    let metric = web::block(move || {
+    let agent = web::block(move || {
         let conn = pool.get()?;
-        Metric::insert_new_metric(&form, &conn)
+        Agent::insert_new_agent(&agent_name.name.to_string(), &conn)
     })
     .await?
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Created().json(metric))
+    Ok(HttpResponse::Created().json(agent))
 }
