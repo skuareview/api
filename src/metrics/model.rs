@@ -1,11 +1,13 @@
-use crate::schema::metrics;
-use diesel;
-use diesel::pg::PgConnection;
 use diesel::prelude::*;
 
-use serde::{Deserialize, Serialize};
+use crate::diesel::RunQueryDsl;
+use crate::schema::metrics;
+use diesel::{AsChangeset, Queryable};
+use serde_derive::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Queryable, AsChangeset)]
+type DbError = Box<dyn std::error::Error + Send + Sync>;
+
+#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable)]
 #[table_name = "metrics"]
 pub struct Metric {
     pub id: i32,
@@ -18,7 +20,7 @@ pub struct Metric {
     pub cpu_load: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Insertable)]
+#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
 #[table_name = "metrics"]
 pub struct InsertableMetric {
     pub load_average_1: Option<String>,
@@ -45,14 +47,19 @@ impl InsertableMetric {
 }
 
 impl Metric {
-    pub fn create(metric: InsertableMetric, connection: &PgConnection) -> QueryResult<Metric> {
-        diesel::insert_into(metrics::table)
-            .values(&metric)
-            .execute(connection)?;
-        metrics::table.order(metrics::id.desc()).first(connection)
-    }
+    /// Run query using Diesel to insert a new database row and return the result.
+    pub fn insert_new_metric(
+        // prevent collision with `name` column imported inside the function
+        form: &InsertableMetric,
+        conn: &PgConnection,
+    ) -> Result<InsertableMetric, DbError> {
+        // It is common when using Diesel with Actix Web to import schema-related
+        // modules inside a function's scope (rather than the normal module's scope)
+        // to prevent import collisions and namespace pollution.
+        use crate::schema::metrics::dsl::*;
 
-    pub fn get_all(connection: &PgConnection) -> QueryResult<Vec<Metric>> {
-        metrics::table.order(metrics::id).load::<Metric>(connection)
+        diesel::insert_into(metrics).values(form).execute(conn)?;
+
+        Ok(form.clone())
     }
 }

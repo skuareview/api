@@ -1,32 +1,37 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+use actix_web::{web, App, HttpServer};
+use diesel::prelude::*;
+use diesel::r2d2::{self, ConnectionManager};
+
+mod metrics;
+mod schema;
 
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-extern crate rocket;
-#[macro_use]
-extern crate rocket_contrib;
 
-use rocket_contrib::json::Json;
-use serde::Deserialize;
+type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
-mod db;
-mod metrics;
-pub mod schema;
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    dotenv::dotenv().ok();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-// #[derive(Debug, PartialEq, Eq, Deserialize)]
-// struct Metric {
-//     load_average_1: String,
-//     load_average_2: String,
-//     load_average_3: String,
-//     memory_used: String,
-//     memory_total: String,
-//     cpu_temp: String,
-//     cpu_load: String,
-// }
+    // set up database connection pool
+    let conn_spec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
+    let manager = ConnectionManager::<PgConnection>::new(conn_spec);
+    let pool = r2d2::Pool::builder()
+        .build(manager)
+        .expect("Failed to create pool.");
 
-fn main() {
-    let mut rocket = rocket::ignite().manage(db::init_pool());
-    rocket = metrics::mount(rocket);
-    rocket.launch();
+    log::info!("starting HTTP server at 0.0.0.0:8080");
+
+    // Start HTTP server
+    HttpServer::new(move || {
+        App::new()
+            // set up DB pool to be used with web::Data<Pool> extractor
+            .app_data(web::Data::new(pool.clone()))
+            .service(metrics::add_metrics)
+    })
+    .bind(("0.0.0.0", 8080))?
+    .run()
+    .await
 }
