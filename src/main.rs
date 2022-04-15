@@ -1,30 +1,35 @@
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
-// use cdb::get_pool;
-mod db;
+use actix_web::{web, App, HttpServer};
+use diesel::prelude::*;
+use diesel::r2d2::{self, ConnectionManager};
+
 mod metrics;
-// #[get("/")]
-// async fn hello() -> impl Responder {
-//     HttpResponse::Ok().body("Hello world!")
-// }
+mod schema;
 
-// #[post("/echo")]
-// async fn echo(req_body: String) -> impl Responder {
-//     HttpResponse::Ok().body(req_body)
-// }
+#[macro_use]
+extern crate diesel;
 
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
-}
+type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Instantiate a new connection pool
-    let pool = db::get_pool();
+    dotenv::dotenv().ok();
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
+    // set up database connection pool
+    let conn_spec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
+    let manager = ConnectionManager::<PgConnection>::new(conn_spec);
+    let pool = r2d2::Pool::builder()
+        .build(manager)
+        .expect("Failed to create pool.");
+
+    log::info!("starting HTTP server at 0.0.0.0:8080");
+
+    // Start HTTP server
     HttpServer::new(move || {
         App::new()
-            .app_data(pool.clone())
-            .route("/", web::get().to(metrics::hello))
-        // .route("/hey", web::get().to(manual_hello))
+            // set up DB pool to be used with web::Data<Pool> extractor
+            .app_data(web::Data::new(pool.clone()))
+            .service(metrics::add_metrics)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
