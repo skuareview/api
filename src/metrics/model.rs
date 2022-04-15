@@ -1,7 +1,6 @@
-use diesel::prelude::*;
-
 use crate::diesel::RunQueryDsl;
 use crate::schema::metrics;
+use diesel::prelude::*;
 use diesel::{AsChangeset, Queryable};
 use serde_derive::{Deserialize, Serialize};
 

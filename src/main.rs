@@ -2,6 +2,7 @@ use actix_web::{web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
+mod agents;
 mod metrics;
 mod schema;
 
@@ -30,6 +31,7 @@ async fn main() -> std::io::Result<()> {
             // set up DB pool to be used with web::Data<Pool> extractor
             .app_data(web::Data::new(pool.clone()))
             .service(metrics::add_metrics)
+            .service(agents::add_agents)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
