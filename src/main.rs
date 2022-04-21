@@ -22,9 +22,11 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
     // set up database connection pool
-    let conn_spec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
-    let manager = ConnectionManager::<PgConnection>::new(conn_spec);
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL");
+    let database_max_connections = std::env::var("DATABASE_MAX_CONNECTIONS").expect("DATABASE_MAX_CONNECTIONS");
+    let manager = ConnectionManager::<PgConnection>::new(database_url);
     let pool = r2d2::Pool::builder()
+        .max_size(database_max_connections.parse::<u32>().unwrap())
         .build(manager)
         .expect("Failed to create pool.");
 
