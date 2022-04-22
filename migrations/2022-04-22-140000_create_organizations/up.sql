@@ -1,0 +1,4 @@
+CREATE TABLE organizations (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR NOT NULL
+)

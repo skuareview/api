@@ -5,12 +5,9 @@ services:
     container_name: api
     image: rustlang/rust:nightly
     environment:
-      ROCKET_ADDRESS: '0.0.0.0'
-      ROCKET_PORT: '8080'
-      ROCKET_LOG: 'normal'
-      ROCKET_DATABASES: '{postgres={url="postgres://postgres:postgres@db/api"}}'
       DATABASE_URL: 'postgres://postgres:postgres@db/api'
       DATABASE_URL_TEST: 'postgres://postgres:postgres@db_test/api_test'
+      DATABASE_MAX_CONNECTIONS: '30'
     build:
         context: ./
     volumes:
@@ -51,6 +48,20 @@ services:
     ports:
       - "5434:5432"
     restart: always
+  schemaspy:
+    image: schemaspy/schemaspy:snapshot
+    volumes:
+      - ./schemaspy/output:/output
+      - ./schemaspy/config:/config
+    container_name: "schemaspy_local"
+    command: [
+      "-configFile",
+      "/config/schemaspy.properties",
+      "-imageformat",
+      "svg"
+    ]
+    depends_on:
+      - api
 
 volumes:
     db:

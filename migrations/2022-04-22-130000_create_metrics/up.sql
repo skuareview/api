@@ -6,5 +6,9 @@ CREATE TABLE metrics (
   memory_used VARCHAR,
   memory_total VARCHAR,
   cpu_temp VARCHAR,
-  cpu_load VARCHAR
+  cpu_load VARCHAR,
+  id_agent INT,
+  CONSTRAINT fk_agent
+    FOREIGN KEY(id_agent)
+      REFERENCES agents(id)
 )
