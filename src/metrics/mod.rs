@@ -1,7 +1,7 @@
 use self::model::{InsertableMetric, Metric};
 use super::DbPool;
 use actix_web::{post, web, Error, HttpResponse};
-mod model;
+pub mod model;
 
 /// Inserts new user with name defined in form.
 #[post("/metrics")]

@@ -1,15 +1,20 @@
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
 mod agents;
 mod metrics;
 mod schema;
+mod tests;
 
 #[macro_use]
 extern crate diesel;
 
 type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
+
+pub async fn index() -> HttpResponse {
+    HttpResponse::Ok().body("Hello, api is up.")
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -30,6 +35,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // set up DB pool to be used with web::Data<Pool> extractor
             .app_data(web::Data::new(pool.clone()))
+            .route("/", web::get().to(index))
             .service(metrics::add_metrics)
             .service(agents::add_agents)
     })

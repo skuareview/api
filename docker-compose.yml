@@ -2,7 +2,7 @@ version: "3.9"
 services:
 
   api:
-    container_name: api_actix
+    container_name: api
     image: rustlang/rust:nightly
     environment:
       ROCKET_ADDRESS: '0.0.0.0'
@@ -10,6 +10,7 @@ services:
       ROCKET_LOG: 'normal'
       ROCKET_DATABASES: '{postgres={url="postgres://postgres:postgres@db/api"}}'
       DATABASE_URL: 'postgres://postgres:postgres@db/api'
+      DATABASE_URL_TEST: 'postgres://postgres:postgres@db_test/api_test'
     build:
         context: ./
     volumes:
@@ -19,7 +20,9 @@ services:
       - "8080:8080"
     depends_on:
       - db
-    command: cargo watch -x run
+      - db_test
+    command: >
+      bash -c "diesel setup && diesel migration run && diesel migration run --database-url=$${DATABASE_URL_TEST} && cargo watch -x run"
 
   db:
     container_name: db
@@ -35,5 +38,20 @@ services:
       - "5433:5432"
     restart: always
 
+  db_test:
+    container_name: db_test
+    image: postgres:14.2
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'postgres'
+      POSTGRES_DB: 'api_test'
+      PGDATA: /data/postgres
+    volumes:
+       - db_test:/data/postgres
+    ports:
+      - "5434:5432"
+    restart: always
+
 volumes:
     db:
+    db_test:
