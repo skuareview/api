@@ -23,7 +23,7 @@ pub struct InsertableAgent {
     pub token: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct AgentName {
     pub name: String,
 }
@@ -54,7 +54,6 @@ impl Agent {
             .take(70)
             .map(char::from)
             .collect();
-        println!("{}", s);
 
         let new_agent = InsertableAgent {
             name: nm.to_owned(),
