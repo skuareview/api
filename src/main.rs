@@ -4,6 +4,7 @@ use diesel::r2d2::{self, ConnectionManager};
 
 mod agents;
 mod metrics;
+mod roles;
 mod schema;
 mod tests;
 
@@ -23,7 +24,8 @@ async fn main() -> std::io::Result<()> {
 
     // set up database connection pool
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL");
-    let database_max_connections = std::env::var("DATABASE_MAX_CONNECTIONS").expect("DATABASE_MAX_CONNECTIONS");
+    let database_max_connections =
+        std::env::var("DATABASE_MAX_CONNECTIONS").expect("DATABASE_MAX_CONNECTIONS");
     let manager = ConnectionManager::<PgConnection>::new(database_url);
     let pool = r2d2::Pool::builder()
         .max_size(database_max_connections.parse::<u32>().unwrap())
@@ -40,6 +42,8 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             .service(metrics::add_metrics)
             .service(agents::add_agents)
+            .service(roles::add_role)
+            .service(roles::get_roles)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
