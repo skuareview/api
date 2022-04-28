@@ -5,6 +5,7 @@ services:
     container_name: api
     image: rustlang/rust:nightly
     environment:
+      SECRET_KEY: 'Xqv8jTGLxT'
       DATABASE_URL: 'postgres://postgres:postgres@db/api'
       DATABASE_URL_TEST: 'postgres://postgres:postgres@db_test/api_test'
       DATABASE_MAX_CONNECTIONS: '30'

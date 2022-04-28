@@ -7,6 +7,7 @@ mod metrics;
 mod roles;
 mod schema;
 mod tests;
+mod users;
 
 #[macro_use]
 extern crate diesel;
@@ -44,6 +45,7 @@ async fn main() -> std::io::Result<()> {
             .service(agents::add_agents)
             .service(roles::add_role)
             .service(roles::get_roles)
+            .service(users::register)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
