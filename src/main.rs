@@ -46,6 +46,7 @@ async fn main() -> std::io::Result<()> {
             .service(roles::add_role)
             .service(roles::get_roles)
             .service(users::register)
+            .service(users::login)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
