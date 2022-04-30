@@ -20,6 +20,8 @@ pub struct InsertableRole {
 }
 
 impl Role {
+    pub const USER: i32 = 1;
+    pub const ADMIN: i32 = 2;
     /// Run query using Diesel to insert a new database row and return the result.
     pub fn insert_new_role(
         // prevent collision with `name` column imported inside the function

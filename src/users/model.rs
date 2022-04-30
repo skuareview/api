@@ -1,5 +1,7 @@
 use crate::diesel::RunQueryDsl;
+use crate::roles::model::Role;
 use crate::schema::users;
+use crate::services::response::CustomResponse;
 use chrono::{DateTime, Duration, Utc};
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
@@ -25,6 +27,7 @@ pub struct InsertableUser {
     pub name: String,
     pub email: String,
     pub password: String,
+    pub id_role: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -52,15 +55,55 @@ pub struct LoginResponse {
     pub token: String,
 }
 
+impl User {
+    pub fn find_user_with_email(user_email: String, conn: &PgConnection) -> Option<User> {
+        use crate::schema::users::dsl::*;
+        let user = users
+            .filter(email.eq(user_email))
+            .select((id, name, email, password))
+            .load::<User>(conn);
+        return Some(user.unwrap()[0].clone());
+    }
+    // pub fn get_user_informations(token: &str, conn: &PgConnection) -> Result<User, DbError> {
+    //     let key = std::env::var("SECRET_TOKEN")
+    //         .expect("SECRET_TOKEN")
+    //         .as_bytes();
+    //     // let key = _var.as_bytes();
+    //     let _decode = decode::<Claims>(
+    //         token,
+    //         &DecodingKey::from_secret(key),
+    //         &Validation::new(Algorithm::HS256),
+    //     );
+    //     match _decode {
+    //         Ok(decoded) => {
+    //             match User::find_user_with_email(
+    //                 (decoded.claims.sub.to_string()).parse().unwrap(),
+    //                 conn,
+    //             ) {
+    //                 Some(user) => Ok(user),
+    //                 //     None => DbError,
+    //                 // }
+    //             }
+    //             // Err(_) => Err(CustomResponse {
+    //             //     status: false,
+    //             //     message: "Invalid Token".to_string(),
+    //             // }),
+    //         }
+    //     }
+    // }
+}
+
 impl Login {
     pub fn login(user_login: &Login, conn: &PgConnection) -> Result<LoginResponse, DbError> {
-        use crate::schema::users::dsl::*;
+        // use crate::schema::users::dsl::*;
 
-        let mut user = users
-            .filter(email.eq(user_login.email.clone()))
-            .select((id, name, email, password))
-            // .first()
-            .load::<User>(conn);
+        // let user = users
+        //     .filter(email.eq(user_login.email.clone()))
+        //     .select((id, name, email, password))
+        //     // .first()
+        //     .load::<User>(conn);
+        let user = User::find_user_with_email(user_login.email.clone(), conn);
+
         // // .first()
         // .unwrap()
         // .first();
@@ -86,7 +129,7 @@ impl Login {
         .unwrap();
         // let user_id = user.unwrap()[0].id.clone();
         Ok(LoginResponse {
-            id: user.unwrap()[0].id.clone(),
+            id: user.unwrap().id.clone(),
             token: token,
         })
         // }
@@ -154,22 +197,34 @@ impl Register {
             name: user_register.name.to_owned(),
             email: user_register.email.to_owned(),
             password: password_crypt,
+            id_role: Role::USER,
         }
     }
     pub fn register(
         user_register: &Register,
         conn: &PgConnection,
-    ) -> Result<InsertableUser, DbError> {
+    ) -> Result<CustomResponse, DbError> {
+        // Check if user already exist
+        let _exist = User::find_user_with_email(user_register.email.clone(), conn);
+        if _exist.is_some() {
+            return Ok(CustomResponse {
+                status: false,
+                message: "exist".to_string(),
+            });
+        }
+        // Register user
         let mut sha = Sha256::new();
         sha.input_str(user_register.password.as_str());
         let hash_pw = sha.result_str();
-
         use crate::schema::users::dsl::*;
         let new_user = Register::to_insertable_user(user_register, hash_pw);
         diesel::insert_into(users)
             .values(new_user.clone())
             .execute(conn)?;
 
-        Ok(new_user)
+        return Ok(CustomResponse {
+            status: true,
+            message: "Created".to_string(),
+        });
     }
 }
