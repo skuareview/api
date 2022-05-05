@@ -61,8 +61,36 @@ impl User {
         let user = users
             .filter(email.eq(user_email))
             .select((id, name, email, password))
-            .load::<User>(conn);
-        return Some(user.unwrap()[0].clone());
+            .load::<User>(conn)
+            .unwrap();
+        // println!("{:?}", user);
+        if user.len() > 0 {
+            return Some(user[0].clone());
+        } else {
+            return None;
+        }
+        // if user.unwrap()[0].email == "" {
+        //     return Some(user.unwrap()[0].clone());
+        // } else {
+        //     return None;
+        // }
+
+        // match user.unwrap()[0].email {
+        //     Some(user) => return Some(user.unwrap()[0].clone()),
+        //     None => {
+        //         return None;
+        //     }
+        // if (user.is_exist()) {
+        //     return Some(user.unwrap()[0].clone());
+        // }
+        // match user {
+        //     Some(user) => return user.unwrap()[0].clone(),
+        //     None => {
+        //         return None;
+        //     }
+        // }
+        // return user;
+        // return Some(user.unwrap()[0].clone());
     }
     // pub fn get_user_informations(token: &str, conn: &PgConnection) -> Result<User, DbError> {
     //     let key = std::env::var("SECRET_TOKEN")
@@ -206,25 +234,49 @@ impl Register {
     ) -> Result<CustomResponse, DbError> {
         // Check if user already exist
         let _exist = User::find_user_with_email(user_register.email.clone(), conn);
-        if _exist.is_some() {
-            return Ok(CustomResponse {
-                status: false,
-                message: "exist".to_string(),
-            });
-        }
-        // Register user
-        let mut sha = Sha256::new();
-        sha.input_str(user_register.password.as_str());
-        let hash_pw = sha.result_str();
-        use crate::schema::users::dsl::*;
-        let new_user = Register::to_insertable_user(user_register, hash_pw);
-        diesel::insert_into(users)
-            .values(new_user.clone())
-            .execute(conn)?;
+        // if _exist.is_some() {
+        //     return Ok(CustomResponse {
+        //         status: false,
+        //         message: "exist".to_string(),
+        //     });
+        // }
+        match _exist {
+            Some(_) => {
+                return Ok(CustomResponse {
+                    status: false,
+                    message: "exist".to_string(),
+                });
+            }
+            None => {
+                // Register user
+                let mut sha = Sha256::new();
+                sha.input_str(user_register.password.as_str());
+                let hash_pw = sha.result_str();
+                use crate::schema::users::dsl::*;
+                let new_user = Register::to_insertable_user(user_register, hash_pw);
+                diesel::insert_into(users)
+                    .values(new_user.clone())
+                    .execute(conn)?;
 
-        return Ok(CustomResponse {
-            status: true,
-            message: "Created".to_string(),
-        });
+                return Ok(CustomResponse {
+                    status: true,
+                    message: "Created".to_string(),
+                });
+            }
+        }
+        // // Register user
+        // let mut sha = Sha256::new();
+        // sha.input_str(user_register.password.as_str());
+        // let hash_pw = sha.result_str();
+        // use crate::schema::users::dsl::*;
+        // let new_user = Register::to_insertable_user(user_register, hash_pw);
+        // diesel::insert_into(users)
+        //     .values(new_user.clone())
+        //     .execute(conn)?;
+
+        // return Ok(CustomResponse {
+        //     status: true,
+        //     message: "Created".to_string(),
+        // });
     }
 }
