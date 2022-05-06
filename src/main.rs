@@ -52,7 +52,7 @@ async fn main() -> std::io::Result<()> {
             .service(roles::get_roles)
             .service(users::register)
             .service(users::login)
-        // .service(users::user_informations)
+            .service(users::user_informations)
     })
     .bind(("0.0.0.0", 8080))?
     .run()

@@ -1,4 +1,4 @@
-use crate::users::model::InsertableUser;
+use crate::users::model::{InsertableUser, User};
 use serde::{Deserialize, Serialize};
 
 // #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -19,7 +19,12 @@ pub struct LoginResponse {
     pub id: Option<i32>,
     pub token: Option<String>,
 }
-
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserResponse {
+    pub status: bool,
+    pub message: String,
+    pub user: Option<User>,
+}
 // impl RegisterResponse {
 //     pub fn set_register_response(
 //         already_exist: bool,

@@ -1,7 +1,8 @@
 use crate::diesel::RunQueryDsl;
 use crate::roles::model::Role;
 use crate::schema::users;
-use crate::services::response::{CustomResponse, LoginResponse};
+use crate::services::response::{CustomResponse, LoginResponse, UserResponse};
+use actix_web::{get, post, web, Error, HttpRequest, HttpResponse};
 use chrono::{DateTime, Duration, Utc};
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
@@ -63,33 +64,62 @@ impl User {
             return None;
         }
     }
-    // pub fn get_user_informations(token: &str, conn: &PgConnection) -> Result<User, DbError> {
-    //     let key = std::env::var("SECRET_TOKEN")
-    //         .expect("SECRET_TOKEN")
-    //         .as_bytes();
-    //     // let key = _var.as_bytes();
-    //     let _decode = decode::<Claims>(
-    //         token,
-    //         &DecodingKey::from_secret(key),
-    //         &Validation::new(Algorithm::HS256),
-    //     );
-    //     match _decode {
-    //         Ok(decoded) => {
-    //             match User::find_user_with_email(
-    //                 (decoded.claims.sub.to_string()).parse().unwrap(),
-    //                 conn,
-    //             ) {
-    //                 Some(user) => Ok(user),
-    //                 //     None => DbError,
-    //                 // }
-    //             }
-    //             // Err(_) => Err(CustomResponse {
-    //             //     status: false,
-    //             //     message: "Invalid Token".to_string(),
-    //             // }),
-    //         }
-    //     }
-    // }
+    pub fn get_uid_from_request(request: &HttpRequest) -> String {
+        let _auth = request.headers().get("Authorization");
+        let _split: Vec<&str> = _auth.unwrap().to_str().unwrap().split("Bearer").collect();
+        let token = _split[1].trim();
+        return token.to_string();
+    }
+
+    pub fn get_user_informations(
+        token: &str,
+        conn: &PgConnection,
+    ) -> Result<UserResponse, DbError> {
+        let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
+        let _decode = decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(key.as_bytes()),
+            &Validation::new(Algorithm::HS256),
+        );
+        // let key = std::env::var("SECRET_TOKEN")
+        //     .expect("SECRET_TOKEN")
+        //     .as_bytes();
+        // // let key = _var.as_bytes();
+        // let _decode = decode::<Claims>(
+        //     token,
+        //     &DecodingKey::from_secret(key),
+        //     &Validation::new(Algorithm::HS256),
+        // );
+        match _decode {
+            Ok(decoded) => {
+                match User::find_user_with_email(
+                    (decoded.claims.sub.to_string()).parse().unwrap(),
+                    conn,
+                ) {
+                    Some(user) => Ok(UserResponse {
+                        status: false,
+                        message: "token invalid".to_string(),
+                        user: Some(user),
+                    }),
+                    None => Ok(UserResponse {
+                        status: false,
+                        message: "user don't find".to_string(),
+                        user: None,
+                    }),
+                    // }
+                }
+                // Err(_) => Err(CustomResponse {
+                //     status: false,
+                //     message: "Invalid Token".to_string(),
+                // }),
+            }
+            Err(_) => Ok(UserResponse {
+                status: false,
+                message: "token invalid".to_string(),
+                user: None,
+            }),
+        }
+    }
 }
 
 impl Login {
