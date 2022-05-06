@@ -70,6 +70,7 @@ table! {
     users (id) {
         id -> Int4,
         email -> Varchar,
+        name -> Varchar,
         password -> Varchar,
         id_role -> Nullable<Int4>,
     }

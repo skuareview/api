@@ -1,12 +1,16 @@
-use actix_web::{web, App, HttpResponse, HttpServer};
+// use actix_web::http::header::ContentEncoding;
+use actix_web::{middleware, web, App, HttpResponse, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
 mod agents;
 mod metrics;
+mod middlewares;
 mod roles;
 mod schema;
+mod services;
 mod tests;
+mod users;
 
 #[macro_use]
 extern crate diesel;
@@ -39,11 +43,16 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // set up DB pool to be used with web::Data<Pool> extractor
             .app_data(web::Data::new(pool.clone()))
+            // .wrap(middleware::Compress::new(ContentEncoding::Br))
+            .wrap(middleware::Logger::default())
             .route("/", web::get().to(index))
             .service(metrics::add_metrics)
             .service(agents::add_agents)
             .service(roles::add_role)
             .service(roles::get_roles)
+            .service(users::register)
+            .service(users::login)
+        // .service(users::user_informations)
     })
     .bind(("0.0.0.0", 8080))?
     .run()

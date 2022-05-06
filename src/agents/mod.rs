@@ -1,5 +1,6 @@
 use self::model::{Agent, AgentName};
 use super::DbPool;
+use crate::middlewares::auth::AuthorizationService;
 use actix_web::{post, web, Error, HttpResponse};
 
 pub mod model;
@@ -9,6 +10,7 @@ pub mod model;
 pub async fn add_agents(
     pool: web::Data<DbPool>,
     agent_name: web::Json<AgentName>,
+    _: AuthorizationService,
 ) -> Result<HttpResponse, Error> {
     // use web::block to offload blocking Diesel code without blocking server thread
     let agent = web::block(move || {
