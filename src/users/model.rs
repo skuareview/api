@@ -1,7 +1,7 @@
 use crate::diesel::RunQueryDsl;
 use crate::roles::model::Role;
 use crate::schema::users;
-use crate::services::response::CustomResponse;
+use crate::services::response::{CustomResponse, LoginResponse};
 use chrono::{DateTime, Duration, Utc};
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
@@ -49,12 +49,6 @@ pub struct Register {
     pub password: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct LoginResponse {
-    pub id: i32,
-    pub token: String,
-}
-
 impl User {
     pub fn find_user_with_email(user_email: String, conn: &PgConnection) -> Option<User> {
         use crate::schema::users::dsl::*;
@@ -63,34 +57,11 @@ impl User {
             .select((id, name, email, password))
             .load::<User>(conn)
             .unwrap();
-        // println!("{:?}", user);
         if user.len() > 0 {
             return Some(user[0].clone());
         } else {
             return None;
         }
-        // if user.unwrap()[0].email == "" {
-        //     return Some(user.unwrap()[0].clone());
-        // } else {
-        //     return None;
-        // }
-
-        // match user.unwrap()[0].email {
-        //     Some(user) => return Some(user.unwrap()[0].clone()),
-        //     None => {
-        //         return None;
-        //     }
-        // if (user.is_exist()) {
-        //     return Some(user.unwrap()[0].clone());
-        // }
-        // match user {
-        //     Some(user) => return user.unwrap()[0].clone(),
-        //     None => {
-        //         return None;
-        //     }
-        // }
-        // return user;
-        // return Some(user.unwrap()[0].clone());
     }
     // pub fn get_user_informations(token: &str, conn: &PgConnection) -> Result<User, DbError> {
     //     let key = std::env::var("SECRET_TOKEN")
@@ -123,100 +94,50 @@ impl User {
 
 impl Login {
     pub fn login(user_login: &Login, conn: &PgConnection) -> Result<LoginResponse, DbError> {
-        // use crate::schema::users::dsl::*;
-
-        // let user = users
-        //     .filter(email.eq(user_login.email.clone()))
-        //     .select((id, name, email, password))
-        //     // .first()
-        //     .load::<User>(conn);
+        // get the potential user with email
         let user = User::find_user_with_email(user_login.email.clone(), conn);
+        match user {
+            Some(_) => {
+                let login_user = user.unwrap().clone();
 
-        // // .first()
-        // .unwrap()
-        // .first();
-        // if user_id == 10 {
-        let mut sha = Sha256::new();
-        sha.input_str(&user_login.password);
+                let mut sha = Sha256::new();
+                sha.input_str(&user_login.password);
+                if login_user.password == sha.result_str() {
+                    let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
 
-        // if user.unwrap().password == sha.result_str() {
-        let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
-        // let mut date: DateTime<Utc>;
-        let date = Utc::now() + Duration::days(30);
-
-        let my_claims = Claims {
-            sub: user_login.email.clone(),
-            exp: date.timestamp() as usize,
-        };
-
-        let token = encode(
-            &Header::default(),
-            &my_claims,
-            &EncodingKey::from_secret(key.as_bytes()),
-        )
-        .unwrap();
-        // let user_id = user.unwrap()[0].id.clone();
-        Ok(LoginResponse {
-            id: user.unwrap().id.clone(),
-            token: token,
-        })
-        // }
-        // if x.password == sha.result_str()
-        // }
-        // match users
-        //     .filter(email.eq(user_login.email))
-        //     .select(id)
-        //     .first(conn)
-        // {
-        //     Some(user) => {}
-        //     None => {}
-        // }
+                    let date = Utc::now() + Duration::days(30);
+                    let my_claims = Claims {
+                        sub: user_login.email.clone(),
+                        exp: date.timestamp() as usize,
+                    };
+                    let token = encode(
+                        &Header::default(),
+                        &my_claims,
+                        &EncodingKey::from_secret(key.as_bytes()),
+                    )
+                    .unwrap();
+                    return Ok(LoginResponse {
+                        status: true,
+                        id: Some(login_user.id),
+                        token: Some(token),
+                    });
+                } else {
+                    return Ok(LoginResponse {
+                        status: false,
+                        id: None,
+                        token: None,
+                    });
+                }
+            }
+            None => {
+                return Ok(LoginResponse {
+                    status: false,
+                    id: None,
+                    token: None,
+                });
+            }
+        }
     }
-
-    // match self.find_user_with_email(user.email.to_string()).unwrap() {
-    //     Some(x) => {
-    //         let mut sha = Sha256::new();
-    //         sha.input_str(user.password.as_str());
-    //         if x.password == sha.result_str() {
-    //             // JWT
-    //             let _config: Config = Config {};
-    //             let _var = _config.get_config_with_key("SECRET_KEY");
-    //             let key = _var.as_bytes();
-
-    //             let mut _date: DateTime<Utc>;
-    //             // Remember Me
-    //             if !user.remember_me {
-    //                 _date = Utc::now() + Duration::hours(1);
-    //             } else {
-    //                 _date = Utc::now() + Duration::days(365);
-    //             }
-    //             let my_claims = Claims {
-    //                 sub: user.email,
-    //                 exp: _date.timestamp() as usize,
-    //             };
-    //             let token = encode(
-    //                 &Header::default(),
-    //                 &my_claims,
-    //                 &EncodingKey::from_secret(key),
-    //             )
-    //                 .unwrap();
-    //             Ok(LoginResponse {
-    //                 status: true,
-    //                 token,
-    //                 message: "You have successfully logged in.".to_string(),
-    //             })
-    //         } else {
-    //             Err(Response {
-    //                 status: false,
-    //                 message: "Check your user informations.".to_string(),
-    //             })
-    //         }
-    //     }
-    //     None => Err(Response {
-    //         status: false,
-    //         message: "Check your user informations.".to_string(),
-    //     }),
-    // }
 }
 
 impl Register {
@@ -234,12 +155,6 @@ impl Register {
     ) -> Result<CustomResponse, DbError> {
         // Check if user already exist
         let _exist = User::find_user_with_email(user_register.email.clone(), conn);
-        // if _exist.is_some() {
-        //     return Ok(CustomResponse {
-        //         status: false,
-        //         message: "exist".to_string(),
-        //     });
-        // }
         match _exist {
             Some(_) => {
                 return Ok(CustomResponse {
@@ -264,19 +179,5 @@ impl Register {
                 });
             }
         }
-        // // Register user
-        // let mut sha = Sha256::new();
-        // sha.input_str(user_register.password.as_str());
-        // let hash_pw = sha.result_str();
-        // use crate::schema::users::dsl::*;
-        // let new_user = Register::to_insertable_user(user_register, hash_pw);
-        // diesel::insert_into(users)
-        //     .values(new_user.clone())
-        //     .execute(conn)?;
-
-        // return Ok(CustomResponse {
-        //     status: true,
-        //     message: "Created".to_string(),
-        // });
     }
 }

@@ -13,6 +13,13 @@ pub struct CustomResponse {
     pub message: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LoginResponse {
+    pub status: bool,
+    pub id: Option<i32>,
+    pub token: Option<String>,
+}
+
 // impl RegisterResponse {
 //     pub fn set_register_response(
 //         already_exist: bool,
