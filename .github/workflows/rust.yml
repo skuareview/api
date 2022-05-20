@@ -25,6 +25,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Move cache
       run: mv /cache/target .
+    - name: Update rustup
+      run: rustup update
     - name: Run migrations
       run: diesel migration run
       env:
