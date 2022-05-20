@@ -28,7 +28,7 @@ jobs:
     - name: Run migrations
       run: diesel migration run
       env:
-        DATABASE_URL: postgres://postgres:postgres@db_test/api_test
+        DATABASE_URL: postgres://postgres:postgres@postgres/postgres
     - name: Run tests
       run: cargo test --verbose
       env:
