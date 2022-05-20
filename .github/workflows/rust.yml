@@ -22,6 +22,8 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
+    - name: Update packages
+      run: apt-get upgrade
     - uses: actions/checkout@v2
     - name: Move cache
       run: mv /cache/target .
