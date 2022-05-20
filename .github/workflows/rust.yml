@@ -26,9 +26,9 @@ jobs:
     - name: Move cache
       run: mv /cache/target .
     - name: Run migrations
-      run: diesel migration run 
+      run: diesel migration run
       env:
-        DATABASE_URL_TEST: postgres://postgres:postgres@db_test/api_test
+        DATABASE_URL: postgres://postgres:postgres@db_test/api_test
     - name: Run tests
       run: cargo test --verbose
       env:
