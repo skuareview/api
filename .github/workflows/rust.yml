@@ -44,6 +44,12 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
+    - name: Run cargo fmt
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+      env:
+        DATABASE_URL_TEST: postgres://postgres:postgres@postgres/postgres
     - name: Run cargo test
       uses: actions-rs/cargo@v1
       with:
