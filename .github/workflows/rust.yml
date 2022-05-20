@@ -1,6 +1,6 @@
 name: tests
 
-on: [push]
+on: [pull_request]
 
 jobs:
   build:
@@ -49,3 +49,5 @@ jobs:
       continue-on-error: true  # WARNING: only for this example, remove it!
       with:
         command: test
+      env:
+        DATABASE_URL_TEST: postgres://postgres:postgres@postgres/postgres
