@@ -50,3 +50,4 @@ jobs:
         command: test
       env:
         DATABASE_URL_TEST: postgres://postgres:postgres@postgres/postgres
+        SECRET_TOKEN: Xqv8jTGLxT
