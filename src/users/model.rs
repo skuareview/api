@@ -64,6 +64,35 @@ impl User {
             return None;
         }
     }
+    pub fn find_token(user_email: String) -> String {
+        let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
+
+        let date = Utc::now() + Duration::days(30);
+        let my_claims = Claims {
+            sub: user_email.clone(),
+            exp: date.timestamp() as usize,
+        };
+        let token = encode(
+            &Header::default(),
+            &my_claims,
+            &EncodingKey::from_secret(key.as_bytes()),
+        )
+        .unwrap();
+        return token;
+    }
+    pub fn find_user_with_name(user_name: String, conn: &PgConnection) -> Option<User> {
+        use crate::schema::users::dsl::*;
+        let user = users
+            .filter(name.eq(user_name))
+            .select((id, name, email, password))
+            .load::<User>(conn)
+            .unwrap();
+        if user.len() > 0 {
+            return Some(user[0].clone());
+        } else {
+            return None;
+        }
+    }
     pub fn get_uid_from_request(request: &HttpRequest) -> String {
         let _auth = request.headers().get("Authorization");
         let _split: Vec<&str> = _auth.unwrap().to_str().unwrap().split("Bearer").collect();
@@ -133,19 +162,20 @@ impl Login {
                 let mut sha = Sha256::new();
                 sha.input_str(&user_login.password);
                 if login_user.password == sha.result_str() {
-                    let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
+                    // let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
 
-                    let date = Utc::now() + Duration::days(30);
-                    let my_claims = Claims {
-                        sub: user_login.email.clone(),
-                        exp: date.timestamp() as usize,
-                    };
-                    let token = encode(
-                        &Header::default(),
-                        &my_claims,
-                        &EncodingKey::from_secret(key.as_bytes()),
-                    )
-                    .unwrap();
+                    // let date = Utc::now() + Duration::days(30);
+                    // let my_claims = Claims {
+                    //     sub: user_login.email.clone(),
+                    //     exp: date.timestamp() as usize,
+                    // };
+                    // let token = encode(
+                    //     &Header::default(),
+                    //     &my_claims,
+                    //     &EncodingKey::from_secret(key.as_bytes()),
+                    // )
+                    // .unwrap();
+                    let token = User::find_token(user_login.email.clone());
                     return Ok(LoginResponse {
                         status: true,
                         id: Some(login_user.id),
