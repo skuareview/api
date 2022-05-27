@@ -38,15 +38,7 @@ impl InsertableAgent {
 }
 
 impl Agent {
-    /// Run query using Diesel to insert a new database row and return the result.
-    pub fn insert_new_agent(
-        // prevent collision with `name` column imported inside the function
-        nm: &String,
-        conn: &PgConnection,
-    ) -> Result<InsertableAgent, DbError> {
-        // It is common when using Diesel with Actix Web to import schema-related
-        // modules inside a function's scope (rather than the normal module's scope)
-        // to prevent import collisions and namespace pollution.
+    pub fn insert_new_agent(nm: &String, conn: &PgConnection) -> Result<InsertableAgent, DbError> {
         use crate::schema::agents::dsl::*;
 
         let s: String = rand::thread_rng()
