@@ -41,6 +41,7 @@ table! {
         id_agent -> Nullable<Int4>,
         id_lambda -> Nullable<Int4>,
         id_organization -> Nullable<Int4>,
+        id_user -> Nullable<Int4>,
     }
 }
 
@@ -77,7 +78,6 @@ table! {
 }
 
 joinable!(monitors -> lambdas (id_lambda));
-joinable!(organizationsusers -> users (id_user));
 joinable!(users -> roles (id_role));
 
 allow_tables_to_appear_in_same_query!(

@@ -37,7 +37,7 @@ pub async fn user_informations(
     pool: web::Data<DbPool>,
     _: AuthorizationService,
 ) -> Result<HttpResponse, Error> {
-    let token = User::get_uid_from_request(&_req);
+    let token = User::get_token_from_request(&_req);
     let user = web::block(move || {
         let conn = pool.get()?;
         User::get_user_informations(&token, &conn)
