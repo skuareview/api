@@ -93,11 +93,33 @@ impl User {
             return None;
         }
     }
-    pub fn get_uid_from_request(request: &HttpRequest) -> String {
+    pub fn get_token_from_request(request: &HttpRequest) -> String {
         let _auth = request.headers().get("Authorization");
         let _split: Vec<&str> = _auth.unwrap().to_str().unwrap().split("Bearer").collect();
         let token = _split[1].trim();
         return token.to_string();
+    }
+
+    pub fn get_uid_from_token(token: &str, conn: &PgConnection) -> Option<i32> {
+        let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
+        let _decode = decode::<Claims>(
+            token,
+            &DecodingKey::from_secret(key.as_bytes()),
+            &Validation::new(Algorithm::HS256),
+        );
+
+        match _decode {
+            Ok(decoded) => {
+                match User::find_user_with_email(
+                    (decoded.claims.sub.to_string()).parse().unwrap(),
+                    conn,
+                ) {
+                    Some(user) => return Some(user.id),
+                    None => return None,
+                }
+            }
+            Err(_) => return None,
+        }
     }
 
     pub fn get_user_informations(
