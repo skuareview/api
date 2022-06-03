@@ -45,5 +45,5 @@ pub async fn user_informations(
     .await?
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Created().json(user))
+    Ok(HttpResponse::Ok().json(user))
 }

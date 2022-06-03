@@ -31,5 +31,5 @@ pub async fn get_roles(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
     .await?
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Created().json(roles))
+    Ok(HttpResponse::Ok().json(roles))
 }

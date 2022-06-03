@@ -33,7 +33,6 @@ pub async fn get_all_monitors_of_user(
 ) -> Result<HttpResponse, Error> {
     let token = crate::users::model::User::get_token_from_request(&_req);
 
-    // use web::block to offload blocking Diesel code without blocking server thread
     let monitors = web::block(move || {
         let conn = pool.get()?;
         Monitor::get_all_monitors_of_user(&token, &conn)
@@ -41,5 +40,5 @@ pub async fn get_all_monitors_of_user(
     .await?
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Created().json(monitors))
+    Ok(HttpResponse::Ok().json(monitors))
 }
