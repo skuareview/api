@@ -10,7 +10,7 @@ pub async fn send_alert_email(to: String) -> bool {
         .from(("John Doe", "john@jenoh.dev"))
         .to(to.clone())
         .subject("Hello, world!")
-        .html_body("<h1>HTML body with</h1>")
+        .html_body(template::alert_template())
         .write_to_string()
         .unwrap();
 
