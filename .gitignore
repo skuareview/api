@@ -3,3 +3,4 @@ schemaspy/output
 schemaspy/.DS_Store
 .DS_Store
 .vscode
+.env
