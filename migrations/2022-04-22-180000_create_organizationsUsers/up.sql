@@ -1,7 +1,7 @@
-CREATE TABLE organizationsUsers (
+CREATE TABLE organizations_users (
   id SERIAL PRIMARY KEY,
   id_organization INT,
-  id_user INT,
+  id_user VARCHAR,
   CONSTRAINT fk_organization
     FOREIGN KEY(id_organization)
       REFERENCES organizations(id),

@@ -1,0 +1,2 @@
+ALTER TABLE monitors DROP CONSTRAINT fk_user;
+ALTER TABLE monitors DROP COLUMN id_user;

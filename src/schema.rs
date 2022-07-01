@@ -41,7 +41,7 @@ table! {
         id_agent -> Nullable<Int4>,
         id_lambda -> Nullable<Int4>,
         id_organization -> Nullable<Int4>,
-        id_user -> Nullable<Int4>,
+        id_user -> Nullable<Varchar>,
     }
 }
 
@@ -53,10 +53,18 @@ table! {
 }
 
 table! {
+    organizations_users (id) {
+        id -> Int4,
+        id_organization -> Nullable<Int4>,
+        id_user -> Nullable<Varchar>,
+    }
+}
+
+table! {
     organizationsusers (id) {
         id -> Int4,
         id_organization -> Nullable<Int4>,
-        id_user -> Nullable<Int4>,
+        id_user -> Nullable<Varchar>,
     }
 }
 
@@ -69,7 +77,7 @@ table! {
 
 table! {
     users (id) {
-        id -> Int4,
+        id -> Varchar,
         email -> Varchar,
         name -> Varchar,
         password -> Varchar,
@@ -86,6 +94,7 @@ allow_tables_to_appear_in_same_query!(
     metrics,
     monitors,
     organizations,
+    organizations_users,
     organizationsusers,
     roles,
     users,
