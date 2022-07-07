@@ -26,22 +26,15 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    # - name: Update packages
-    #   run: apt-get upgrade
+    - name: Update packages
+      run: apt-get install libssl-dev
     - uses: actions/checkout@v2
     - name: Move cache
       run: mv /cache/target .
-    # - name: Update rustup
-    #   run: rustup update
     - name: Run migrations
       run: diesel migration run
       env:
         DATABASE_URL: postgres://postgres:postgres@postgres/postgres
-    # - name: Run tests
-    #   run: cargo test --verbose
-    #   env:
-    #     RUST_LOG: info
-
     - name: Install stable toolchain
       uses: actions-rs/toolchain@v1
       with:
