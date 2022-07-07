@@ -46,15 +46,10 @@ impl InsertableMetric {
 }
 
 impl Metric {
-    /// Run query using Diesel to insert a new database row and return the result.
     pub fn insert_new_metric(
-        // prevent collision with `name` column imported inside the function
         form: &InsertableMetric,
         conn: &PgConnection,
     ) -> Result<InsertableMetric, DbError> {
-        // It is common when using Diesel with Actix Web to import schema-related
-        // modules inside a function's scope (rather than the normal module's scope)
-        // to prevent import collisions and namespace pollution.
         use crate::schema::metrics::dsl::*;
 
         diesel::insert_into(metrics).values(form).execute(conn)?;

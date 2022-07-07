@@ -1,6 +1,6 @@
 use crate::diesel::RunQueryDsl;
 use crate::schema::organizations;
-use crate::schema::organizationsusers;
+use crate::schema::organizations_users;
 use diesel::prelude::*;
 use diesel::{AsChangeset, Queryable};
 use serde_derive::{Deserialize, Serialize};
@@ -21,10 +21,10 @@ pub struct InsertableOrganisation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable, Queryable)]
-#[table_name = "organizationsusers"]
+#[table_name = "organizations_users"]
 pub struct InsertableOrganisationUser {
     pub id_organization: Option<i32>,
-    pub id_user: Option<i32>,
+    pub id_user: Option<uuid::Uuid>,
 }
 
 // #[derive(Debug, Clone, Serialize, Queryable, Deserialize, Insertable)]
@@ -42,7 +42,7 @@ impl Organization {
         conn: &PgConnection,
     ) -> Result<InsertableOrganisation, DbError> {
         use crate::schema::organizations::dsl::*;
-        use crate::schema::organizationsusers::dsl::*;
+        // use crate::schema::organizations_users::dsl::*;
         // let monitor = InsertableMonitor {
         //     name: form.name.clone(),
         //     aws_eventbridge_region: "wip".to_owned(),
