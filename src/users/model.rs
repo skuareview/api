@@ -141,28 +141,25 @@ impl User {
                     conn,
                 ) {
                     Some(user) => Ok(UserResponse {
-                        status: false,
-                        message: "token invalid".to_string(),
+                        status: true,
                         user: Some(user),
                     }),
                     None => Ok(UserResponse {
                         status: false,
-                        message: "user don't find".to_string(),
                         user: None,
                     }),
-                    // }
                 }
-                // Err(_) => Err(CustomResponse {
-                //     status: false,
-                //     message: "Invalid Token".to_string(),
-                // }),
             }
             Err(_) => Ok(UserResponse {
                 status: false,
-                message: "token invalid".to_string(),
                 user: None,
             }),
         }
+    }
+    pub fn hash_pw(password: String) -> String {
+        let mut sha = Sha256::new();
+        sha.input_str(&password);
+        return sha.result_str();
     }
 }
 
@@ -192,7 +189,7 @@ impl Login {
             }
             None => {
                 return Ok(LoginResponse {
-                    status: false,
+                    status: true,
                     id: None,
                     token: None,
                 });
@@ -227,9 +224,7 @@ impl Register {
             }
             None => {
                 // Register user
-                let mut sha = Sha256::new();
-                sha.input_str(user_register.password.as_str());
-                let hash_pw = sha.result_str();
+                let hash_pw: String = User::hash_pw(user_register.password.clone());
                 use crate::schema::users::dsl::*;
                 let new_user = Register::to_insertable_user(user_register, hash_pw);
                 diesel::insert_into(users)
