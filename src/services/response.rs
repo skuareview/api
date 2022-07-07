@@ -22,7 +22,6 @@ pub struct LoginResponse {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserResponse {
     pub status: bool,
-    pub message: String,
     pub user: Option<User>,
 }
 // impl RegisterResponse {

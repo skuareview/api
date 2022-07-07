@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
     use crate::services::response;
+    use crate::tests::util;
     use crate::users as users_crate;
     use crate::users::model;
     use actix_web::{test, web, App};
     use diesel::prelude::*;
     use diesel::r2d2::{self, ConnectionManager};
     use rand::Rng;
-    use uuid::Uuid;
 
     #[actix_web::test]
     async fn register() {
@@ -77,20 +77,7 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let random: String = rng.gen::<i32>().to_string();
-        use crate::schema::users::dsl::*;
-        let uuid = Uuid::new_v4();
-
-        let new_user = crate::users::model::InsertableUser {
-            id: uuid,
-            name: "seed_user_name".to_owned() + &random,
-            email: "seed_user_email@gmail.com".to_owned() + &random,
-            password: model::User::hash_pw("seed_user_password".to_owned() + &random),
-            id_role: 1,
-        };
-        diesel::insert_into(users)
-            .values(new_user.clone())
-            .execute(&conn)
-            .unwrap();
+        util::insert_user(random.clone(), &conn);
 
         /*
          * Act
@@ -135,26 +122,11 @@ mod tests {
 
         let mut rng = rand::thread_rng();
         let random: String = rng.gen::<i32>().to_string();
-        use crate::schema::users::dsl::*;
-        let uuid = Uuid::new_v4();
-
-        let new_user = crate::users::model::InsertableUser {
-            id: uuid,
-            name: "seed_user_name".to_owned() + &random,
-            email: "seed_user_email@gmail.com".to_owned() + &random,
-            password: model::User::hash_pw("seed_user_password".to_owned() + &random),
-            id_role: 1,
-        };
-        diesel::insert_into(users)
-            .values(new_user.clone())
-            .execute(&conn)
-            .unwrap();
+        let token: String = util::insert_user(random.clone(), &conn);
 
         /*
          * Act
          */
-        let token = crate::users::model::User::find_token(new_user.email.clone());
-
         let req = test::TestRequest::get()
             .uri("/user_informations")
             .insert_header((
