@@ -16,7 +16,7 @@ pub struct CustomResponse {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoginResponse {
     pub status: bool,
-    pub id: Option<i32>,
+    pub id: Option<uuid::Uuid>,
     pub token: Option<String>,
 }
 #[derive(Serialize, Deserialize, Debug)]

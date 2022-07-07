@@ -3,6 +3,7 @@ use crate::schema::monitors;
 use diesel::prelude::*;
 use diesel::{AsChangeset, Queryable};
 use serde_derive::{Deserialize, Serialize};
+use uuid::Uuid;
 
 type DbError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -12,7 +13,7 @@ pub struct Monitor {
     pub id: i32,
     pub id_agent: Option<i32>,
     pub id_lambda: Option<i32>,
-    pub id_user: Option<i32>,
+    pub id_user: Uuid,
     pub id_organization: Option<i32>,
     pub name: String,
     pub aws_eventbridge_region: String,
@@ -27,7 +28,7 @@ pub struct Monitor {
 pub struct InsertableMonitor {
     pub id_agent: Option<i32>,
     pub id_lambda: Option<i32>,
-    pub id_user: Option<i32>,
+    pub id_user: Uuid,
     pub id_organization: Option<i32>,
     pub name: String,
     pub aws_eventbridge_region: String,
@@ -62,7 +63,7 @@ impl Monitor {
             aws_eventbridge_schedule_expression: "wip".to_owned(),
             id_agent: form.id_agent,
             id_lambda: None,
-            id_user: uid,
+            id_user: uid.unwrap(),
             id_organization: form.id_organization,
         };
         diesel::insert_into(monitors)
@@ -71,30 +72,17 @@ impl Monitor {
 
         Ok(monitor)
     }
-    pub fn get_all_monitors_of_user(
-        token: &str,
-        conn: &PgConnection,
-    ) -> Result<Vec<Monitor>, DbError> {
-        let uid = crate::users::model::User::get_uid_from_token(token, conn);
-        use crate::schema::monitors::dsl::*;
+    // pub fn get_all_monitors_of_user(
+    //     token: &str,
+    //     conn: &PgConnection,
+    // ) -> Result<Vec<Monitor>, DbError> {
+    //     let uid = crate::users::model::User::get_uid_from_token(token, conn);
+    //     use crate::schema::monitors::dsl::*;
 
-        let all_monitors = monitors
-            .filter(id_user.eq(uid))
-            .select((
-                id,
-                id_agent,
-                id_user,
-                id_lambda,
-                id_organization,
-                name,
-                aws_eventbridge_region,
-                aws_eventbridge_name,
-                aws_eventbridge_description,
-                aws_eventbridge_event_bus_name,
-                aws_eventbridge_schedule_expression,
-            ))
-            .load::<Monitor>(conn)
-            .unwrap();
-        Ok(all_monitors)
-    }
+    //     let all_monitors = monitors
+    //         .filter(id_user.eq(uid.unwrap()))
+    //         .load::<Monitor>(conn)
+    //         .unwrap();
+    //     Ok(all_monitors)
+    // }
 }

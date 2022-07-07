@@ -9,6 +9,7 @@ mod tests {
     use diesel::prelude::*;
     use diesel::r2d2::{self, ConnectionManager};
     use jsonwebtoken::{encode, EncodingKey, Header};
+    use uuid::Uuid;
 
     #[actix_web::test]
 
@@ -52,7 +53,11 @@ mod tests {
         // let resp: response::CustomResponse = test::call_and_read_body_json(&mut app, req).await;
 
         use crate::schema::users::dsl::*;
+
+        let uuid = Uuid::new_v4();
+
         let new_user = crate::users::model::InsertableUser {
+            id: uuid,
             name: "testAgents".to_owned(),
             email: "testAgents@gmail.com".to_owned(),
             password: "password_crypt".to_owned(),

@@ -51,7 +51,7 @@ async fn main() -> std::io::Result<()> {
             .service(metrics::add_metrics)
             .service(organizations::add_organization)
             .service(monitors::add_monitor)
-            .service(monitors::get_all_monitors_of_user)
+            // .service(monitors::get_all_monitors_of_user)
             .service(agents::add_agents)
             .service(roles::add_role)
             .service(roles::get_roles)

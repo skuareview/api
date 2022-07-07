@@ -10,13 +10,14 @@ use diesel::prelude::*;
 use diesel::{AsChangeset, Queryable};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde_derive::{Deserialize, Serialize};
+use uuid::Uuid;
 
 type DbError = Box<dyn std::error::Error + Send + Sync>;
 
-#[derive(Serialize, Clone, Deserialize, Debug, Queryable, AsChangeset, Insertable)]
+#[derive(Serialize, Clone, Deserialize, Debug, Queryable, AsChangeset)]
 #[table_name = "users"]
 pub struct User {
-    pub id: i32,
+    pub id: Uuid,
     pub name: String,
     pub email: String,
     pub password: String,
@@ -25,6 +26,7 @@ pub struct User {
 #[derive(Serialize, Clone, Deserialize, Debug, Insertable)]
 #[table_name = "users"]
 pub struct InsertableUser {
+    pub id: Uuid,
     pub name: String,
     pub email: String,
     pub password: String,
@@ -100,7 +102,7 @@ impl User {
         return token.to_string();
     }
 
-    pub fn get_uid_from_token(token: &str, conn: &PgConnection) -> Option<i32> {
+    pub fn get_uid_from_token(token: &str, conn: &PgConnection) -> Option<uuid::Uuid> {
         let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
         let _decode = decode::<Claims>(
             token,
@@ -132,15 +134,6 @@ impl User {
             &DecodingKey::from_secret(key.as_bytes()),
             &Validation::new(Algorithm::HS256),
         );
-        // let key = std::env::var("SECRET_TOKEN")
-        //     .expect("SECRET_TOKEN")
-        //     .as_bytes();
-        // // let key = _var.as_bytes();
-        // let _decode = decode::<Claims>(
-        //     token,
-        //     &DecodingKey::from_secret(key),
-        //     &Validation::new(Algorithm::HS256),
-        // );
         match _decode {
             Ok(decoded) => {
                 match User::find_user_with_email(
@@ -180,23 +173,9 @@ impl Login {
         match user {
             Some(_) => {
                 let login_user = user.unwrap().clone();
-
                 let mut sha = Sha256::new();
                 sha.input_str(&user_login.password);
                 if login_user.password == sha.result_str() {
-                    // let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
-
-                    // let date = Utc::now() + Duration::days(30);
-                    // let my_claims = Claims {
-                    //     sub: user_login.email.clone(),
-                    //     exp: date.timestamp() as usize,
-                    // };
-                    // let token = encode(
-                    //     &Header::default(),
-                    //     &my_claims,
-                    //     &EncodingKey::from_secret(key.as_bytes()),
-                    // )
-                    // .unwrap();
                     let token = User::find_token(user_login.email.clone());
                     return Ok(LoginResponse {
                         status: true,
@@ -224,7 +203,9 @@ impl Login {
 
 impl Register {
     fn to_insertable_user(user_register: &Register, password_crypt: String) -> InsertableUser {
+        let id = Uuid::new_v4();
         InsertableUser {
+            id: id,
             name: user_register.name.to_owned(),
             email: user_register.email.to_owned(),
             password: password_crypt,

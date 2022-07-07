@@ -5,7 +5,7 @@ mod tests {
     use actix_web::{test, web, App};
     use diesel::prelude::*;
     use diesel::r2d2::{self, ConnectionManager};
-
+    use uuid::Uuid;
     #[actix_web::test]
     async fn monitors_routes() {
         std::env::set_var("RUST_LOG", "actix_web=debug");
@@ -25,7 +25,11 @@ mod tests {
         .await;
 
         use crate::schema::users::dsl::*;
+
+        let uuid = Uuid::new_v4();
+
         let new_user = crate::users::model::InsertableUser {
+            id: uuid,
             name: "testMonitors".to_owned(),
             email: "testMonitors@gmail.com".to_owned(),
             password: "password_crypt".to_owned(),

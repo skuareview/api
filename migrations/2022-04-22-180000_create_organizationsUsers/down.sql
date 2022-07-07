@@ -1,2 +1,1 @@
--- This file should undo anything in `up.sql`
-DROP TABLE IF EXISTS organizations_users;
+DROP TABLE IF EXISTS organizations_users CASCADE;
