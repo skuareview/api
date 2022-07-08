@@ -1,0 +1,62 @@
+# NOTE: THIS WORKFLOW USES CUSTOM ACTIONS
+
+# https://github.com/actions/checkout
+# https://github.com/actions-rs/toolchain
+# https://github.com/actions-rs/cargo
+# https://github.com/Swatinem/rust-cache
+# https://github.com/actions/upload-artifact
+# https://github.com/actions/download-artifact
+
+name: CI
+
+on: [pull_request]
+
+jobs:
+  Tests:
+    runs-on: ubuntu-latest
+    container: ubuntu:22.04
+    env:
+      DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
+      SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
+
+    services:
+      postgres:
+        image: postgres:14.4
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Dependencies
+        run: | 
+          apt-get -y update
+          apt-get -y install curl build-essential libpq-dev pkg-config
+
+      - name: Rust toolchain installer
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Install diesel_cli
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: diesel_cli --no-default-features --features postgres
+
+      - name: Make the migrations
+        run: ~/.cargo/bin/diesel migration run --database-url=${DATABASE_URL_TEST} 
+
+      - name: Run the tests 
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --verbose
