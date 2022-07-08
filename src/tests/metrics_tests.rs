@@ -7,7 +7,10 @@ mod tests {
     use diesel::r2d2::{self, ConnectionManager};
 
     #[actix_web::test]
-    async fn metrics_routes() {
+    async fn post() {
+        /*
+         * Arrange
+         */
         std::env::set_var("RUST_LOG", "actix_web=debug");
         dotenv::dotenv().ok();
 
@@ -24,7 +27,9 @@ mod tests {
         )
         .await;
 
-        // Insert a metric
+        /*
+         * Act
+         */
         let req = test::TestRequest::post()
             .uri("/metrics")
             .set_json(&model::InsertableMetric {
@@ -40,21 +45,9 @@ mod tests {
 
         let resp: model::InsertableMetric = test::call_and_read_body_json(&mut app, req).await;
 
+        /*
+         * Assert
+         */
         assert_eq!(resp.load_average_1.unwrap(), "0.10");
-
-        // // Get a user
-        // let req = test::TestRequest::get()
-        //     .uri(&format!("/user/{}", resp.id))
-        //     .to_request();
-
-        // let resp: models::User = test::call_and_read_body_json(&mut app, req).await;
-
-        // assert_eq!(resp.name, "Test user");
-
-        // // Delete new user from table
-        // use crate::schema::users::dsl::*;
-        // diesel::delete(users.filter(id.eq(resp.id)))
-        //     .execute(&pool.get().expect("couldn't get db connection from pool"))
-        //     .expect("couldn't delete test user from table");
     }
 }

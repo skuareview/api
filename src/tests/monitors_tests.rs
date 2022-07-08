@@ -2,12 +2,17 @@
 mod tests {
     use crate::monitors;
     use crate::monitors::model;
+    use crate::tests::util;
     use actix_web::{test, web, App};
     use diesel::prelude::*;
     use diesel::r2d2::{self, ConnectionManager};
-    use uuid::Uuid;
+    use rand::Rng;
+
     #[actix_web::test]
-    async fn monitors_routes() {
+    async fn post() {
+        /*
+         * Arrange
+         */
         std::env::set_var("RUST_LOG", "actix_web=debug");
         dotenv::dotenv().ok();
 
@@ -24,29 +29,13 @@ mod tests {
         )
         .await;
 
-        use crate::schema::users::dsl::*;
+        let mut rng = rand::thread_rng();
+        let random: String = rng.gen::<i32>().to_string();
+        let token: String = util::insert_user(random.clone(), &conn);
 
-        let uuid = Uuid::new_v4();
-
-        let new_user = crate::users::model::InsertableUser {
-            id: uuid,
-            name: "testMonitors".to_owned(),
-            email: "testMonitors@gmail.com".to_owned(),
-            password: "password_crypt".to_owned(),
-            id_role: 1,
-        };
-        let testUser = diesel::insert_into(users)
-            .values(new_user.clone())
-            .execute(&conn);
-
-        let user = crate::users::model::User::find_user_with_email(
-            "testMonitors@gmail.com".to_owned(),
-            &conn,
-        );
-
-        // Retreive token
-        let token = crate::users::model::User::find_token(user.unwrap().email.clone());
-        // Insert a monitor
+        /*
+         * Act
+         */
         let req = test::TestRequest::post()
             .uri("/monitors")
             .insert_header((
@@ -62,21 +51,9 @@ mod tests {
 
         let resp: model::InsertableMonitor = test::call_and_read_body_json(&mut app, req).await;
 
+        /*
+         * Assert
+         */
         assert_eq!(resp.name, "my best monitor");
-
-        // // Get a user
-        // let req = test::TestRequest::get()
-        //     .uri(&format!("/user/{}", resp.id))
-        //     .to_request();
-
-        // let resp: models::User = test::call_and_read_body_json(&mut app, req).await;
-
-        // assert_eq!(resp.name, "Test user");
-
-        // // Delete new user from table
-        // use crate::schema::users::dsl::*;
-        // diesel::delete(users.filter(id.eq(resp.id)))
-        //     .execute(&pool.get().expect("couldn't get db connection from pool"))
-        //     .expect("couldn't delete test user from table");
     }
 }

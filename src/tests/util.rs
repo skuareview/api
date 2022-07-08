@@ -1,10 +1,5 @@
-use crate::services::response;
-use crate::users as users_crate;
 use crate::users::model;
-use actix_web::{test, web, App};
 use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
-use rand::Rng;
 use uuid::Uuid;
 
 pub fn insert_user(salt: String, conn: &PgConnection) -> String {
