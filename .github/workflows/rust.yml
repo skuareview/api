@@ -7,7 +7,7 @@ on:
     types: [closed]
 jobs:
   build:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     container:
       image: nemesiscodex/actix-todo-cache
     services:
@@ -24,6 +24,8 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
+    - name: Install
+      run: apt-get install pkg-config
     - uses: actions/checkout@v2
     - name: Move cache
       run: mv /cache/target .
