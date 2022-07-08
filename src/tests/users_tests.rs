@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::services::response;
-    use crate::users;
+    use crate::tests::util;
+    use crate::users as users_crate;
     use crate::users::model;
     use actix_web::{test, web, App};
     use diesel::prelude::*;
@@ -9,9 +10,10 @@ mod tests {
     use rand::Rng;
 
     #[actix_web::test]
-    async fn users_routes() {
-        // Init
-        let mut rng = rand::thread_rng();
+    async fn register() {
+        /*
+         * Arrange
+         */
         std::env::set_var("RUST_LOG", "actix_web=debug");
         dotenv::dotenv().ok();
 
@@ -24,11 +26,16 @@ mod tests {
         let mut app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
-                .service(users::register),
+                .service(users_crate::register),
         )
         .await;
+
+        /*
+         * Act
+         */
+        let mut rng = rand::thread_rng();
         let random: String = rng.gen::<i32>().to_string();
-        // Register a user
+
         let req = test::TestRequest::post()
             .uri("/register")
             .set_json(&model::Register {
@@ -40,28 +47,17 @@ mod tests {
 
         let resp: response::CustomResponse = test::call_and_read_body_json(&mut app, req).await;
 
+        /*
+         * Assert
+         */
         assert_eq!(resp.status, true);
-
-        // Get all roles
-        // let req = test::TestRequest::get()
-        //     .uri(&format!("/roles"))
-        //     .to_request();
-
-        // let resp: Vec<model::Role> = test::call_and_read_body_json(&mut app, req).await;
-
-        // assert_eq!(resp.first().name, "Admin");
-
-        // // Delete new user from table
-        // use crate::schema::users::dsl::*;
-        // diesel::delete(users.filter(id.eq(resp.id)))
-        //     .execute(&pool.get().expect("couldn't get db connection from pool"))
-        //     .expect("couldn't delete test user from table");
     }
 
     #[actix_web::test]
-    async fn agents_routes() {
-        // Init
-        let mut rng = rand::thread_rng();
+    async fn login() {
+        /*
+         * Arrange
+         */
         std::env::set_var("RUST_LOG", "actix_web=debug");
         dotenv::dotenv().ok();
 
@@ -70,41 +66,80 @@ mod tests {
         let pool = r2d2::Pool::builder()
             .build(manager)
             .expect("Failed to create pool.");
+        let conn = pool.get().unwrap();
 
         let mut app = test::init_service(
             App::new()
                 .app_data(web::Data::new(pool.clone()))
-                .service(users::register),
+                .service(users_crate::login),
         )
         .await;
+
+        let mut rng = rand::thread_rng();
         let random: String = rng.gen::<i32>().to_string();
-        // Register a user
+        util::insert_user(random.clone(), &conn);
+
+        /*
+         * Act
+         */
         let req = test::TestRequest::post()
-            .uri("/register")
-            .set_json(&model::Register {
-                name: "Phantom98".to_owned(),
-                email: "phantom@gmail.com".to_owned() + &random,
-                password: "phantom".to_owned(),
+            .uri("/login")
+            .set_json(&model::Login {
+                email: "seed_user_email@gmail.com".to_owned() + &random,
+                password: "seed_user_password".to_owned() + &random,
             })
             .to_request();
 
-        let resp: response::CustomResponse = test::call_and_read_body_json(&mut app, req).await;
+        let resp: response::LoginResponse = test::call_and_read_body_json(&mut app, req).await;
 
+        /*
+         * Assert
+         */
         assert_eq!(resp.status, true);
+    }
 
-        // Get all roles
-        // let req = test::TestRequest::get()
-        //     .uri(&format!("/roles"))
-        //     .to_request();
+    #[actix_web::test]
+    async fn user_informations() {
+        /*
+         * Arrange
+         */
+        std::env::set_var("RUST_LOG", "actix_web=debug");
+        dotenv::dotenv().ok();
 
-        // let resp: Vec<model::Role> = test::call_and_read_body_json(&mut app, req).await;
+        let connspec = std::env::var("DATABASE_URL_TEST").expect("DATABASE_URL_TEST");
+        let manager = ConnectionManager::<PgConnection>::new(connspec);
+        let pool = r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.");
+        let conn = pool.get().unwrap();
 
-        // assert_eq!(resp.first().name, "Admin");
+        let mut app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(pool.clone()))
+                .service(users_crate::user_informations),
+        )
+        .await;
 
-        // // Delete new user from table
-        // use crate::schema::users::dsl::*;
-        // diesel::delete(users.filter(id.eq(resp.id)))
-        //     .execute(&pool.get().expect("couldn't get db connection from pool"))
-        //     .expect("couldn't delete test user from table");
+        let mut rng = rand::thread_rng();
+        let random: String = rng.gen::<i32>().to_string();
+        let token: String = util::insert_user(random.clone(), &conn);
+
+        /*
+         * Act
+         */
+        let req = test::TestRequest::get()
+            .uri("/user_informations")
+            .insert_header((
+                actix_web::http::header::AUTHORIZATION,
+                "Bearer ".to_owned() + &token,
+            ))
+            .to_request();
+
+        let resp: response::UserResponse = test::call_and_read_body_json(&mut app, req).await;
+
+        /*
+         * Assert
+         */
+        assert_eq!(resp.status, true);
     }
 }

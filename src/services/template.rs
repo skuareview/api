@@ -3,7 +3,9 @@ use serde_json::json;
 
 pub fn alert_template() -> String {
     let mut handlebars = Handlebars::new();
-    handlebars.register_template_file("alert", "templates/alert.hbs");
+    handlebars
+        .register_template_file("alert", "templates/alert.hbs")
+        .unwrap();
 
     let data0 = json!({
         "title": "example 0",

@@ -5,10 +5,8 @@ on:
     branches:
       - main
     types: [closed]
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
     container:
       image: nemesiscodex/actix-todo-cache
