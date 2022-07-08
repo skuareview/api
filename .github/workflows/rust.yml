@@ -2,12 +2,9 @@ name: tests
 
 on:
   pull_request:
-    branches:
-      - main
-    types: [closed]
 jobs:
   build:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
     container:
       image: nemesiscodex/actix-todo-cache
     services:
