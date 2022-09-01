@@ -17,5 +17,5 @@ pub fn insert_user(salt: String, conn: &PgConnection) -> String {
         .values(new_user.clone())
         .execute(conn)
         .unwrap();
-    return crate::users::model::User::find_token(new_user.email.clone());
+    crate::users::model::User::find_token(new_user.email.clone())
 }

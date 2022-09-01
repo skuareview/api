@@ -1,7 +1,7 @@
-use self::model::{FormMonitor, InsertableMonitor, Monitor};
+use self::model::{FormMonitor, Monitor};
 use super::DbPool;
 use crate::middlewares::auth::AuthorizationService;
-use actix_web::{get, post, web, Error, HttpRequest, HttpResponse};
+use actix_web::{post, web, Error, HttpRequest, HttpResponse};
 pub mod model;
 
 /// Inserts new monitor  with name, id_agent, id_organization defined in form.

@@ -1,4 +1,4 @@
-use crate::users::model::{InsertableUser, User};
+use crate::users::model::User;
 use serde::{Deserialize, Serialize};
 
 // #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -3,12 +3,8 @@ services:
 
   api:
     container_name: api
-    image: rustlang/rust:nightly
-    environment:
-      SECRET_TOKEN: 'Xqv8jTGLxT'
-      DATABASE_URL: 'postgres://postgres:postgres@db/api'
-      DATABASE_URL_TEST: 'postgres://postgres:postgres@db_test/api_test'
-      DATABASE_MAX_CONNECTIONS: '30'
+    env_file:
+      - .env
     build:
         context: ./
     volumes:
@@ -19,50 +15,29 @@ services:
     depends_on:
       - db
       - db_test
-    command: >
-      bash -c "diesel setup && diesel migration run && diesel migration run --database-url=$${DATABASE_URL_TEST} && cargo watch -x run"
+    entrypoint: ["/bin/bash", "./entrypoint.sh"]
 
   db:
     container_name: db
     image: postgres:14.2
     environment:
-      POSTGRES_USER: 'postgres'
       POSTGRES_PASSWORD: 'postgres'
       POSTGRES_DB: 'api'
       PGDATA: /data/postgres
     volumes:
        - db:/data/postgres
-    ports:
-      - "5433:5432"
     restart: always
 
   db_test:
     container_name: db_test
     image: postgres:14.2
     environment:
-      POSTGRES_USER: 'postgres'
       POSTGRES_PASSWORD: 'postgres'
       POSTGRES_DB: 'api_test'
       PGDATA: /data/postgres
     volumes:
        - db_test:/data/postgres
-    ports:
-      - "5434:5432"
     restart: always
-  schemaspy:
-    image: schemaspy/schemaspy:snapshot
-    volumes:
-      - ./schemaspy/output:/output
-      - ./schemaspy/config:/config
-    container_name: "schemaspy_local"
-    command: [
-      "-configFile",
-      "/config/schemaspy.properties",
-      "-imageformat",
-      "svg"
-    ]
-    depends_on:
-      - api
 
 volumes:
     db:

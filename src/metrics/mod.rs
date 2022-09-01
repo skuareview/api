@@ -1,5 +1,4 @@
 use self::model::{InsertableMetric, Metric};
-use super::services::email;
 use super::DbPool;
 use actix_web::{post, web, Error, HttpResponse};
 pub mod model;
@@ -16,6 +15,6 @@ pub async fn add_metrics(
     })
     .await?
     .map_err(actix_web::error::ErrorInternalServerError)?;
-    let bool = email::send_alert_email("service-ses@jenoh.dev".to_string()).await;
+    // let bool = email::send_alert_email("service-ses@jenoh.dev".to_string()).await;
     Ok(HttpResponse::Created().json(metric))
 }

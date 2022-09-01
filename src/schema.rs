@@ -1,4 +1,6 @@
-table! {
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
     agents (id) {
         id -> Int4,
         name -> Varchar,
@@ -6,7 +8,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     lambdas (id) {
         id -> Int4,
         aws_lambda_region -> Varchar,
@@ -15,7 +17,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     metrics (id) {
         id -> Int4,
         load_average_1 -> Nullable<Varchar>,
@@ -29,7 +31,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     monitors (id) {
         id -> Int4,
         name -> Varchar,
@@ -45,14 +47,14 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     organizations (id) {
         id -> Int4,
         name -> Varchar,
     }
 }
 
-table! {
+diesel::table! {
     organizations_users (id) {
         id -> Int4,
         id_organization -> Nullable<Int4>,
@@ -60,14 +62,14 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     roles (id) {
         id -> Int4,
         name -> Varchar,
     }
 }
 
-table! {
+diesel::table! {
     users (id) {
         id -> Uuid,
         email -> Varchar,
@@ -77,10 +79,10 @@ table! {
     }
 }
 
-joinable!(monitors -> lambdas (id_lambda));
-joinable!(users -> roles (id_role));
+diesel::joinable!(monitors -> lambdas (id_lambda));
+diesel::joinable!(users -> roles (id_role));
 
-allow_tables_to_appear_in_same_query!(
+diesel::allow_tables_to_appear_in_same_query!(
     agents,
     lambdas,
     metrics,
