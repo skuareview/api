@@ -1,10 +1,21 @@
-FROM rustlang/rust:nightly
+FROM ubuntu:22.04
 
 WORKDIR /app
 
 ADD src src
 COPY Cargo.toml .
 
-RUN cargo install cargo-watch
-RUN cargo install diesel_cli --no-default-features --features postgres
-RUN cargo build
+# Dependencies
+RUN apt-get -y update
+RUN apt-get -y install curl build-essential libpq-dev pkg-config netcat
+
+# Rustup install (not yet packaged on Ubuntu)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# Rust toolchain
+RUN ${HOME}/.cargo/bin/rustup install 1.63.0
+
+# Cargo stuff
+RUN ${HOME}/.cargo/bin/cargo install cargo-watch
+RUN ${HOME}/.cargo/bin/cargo install diesel_cli --no-default-features --features postgres
+RUN ${HOME}/.cargo/bin/cargo build

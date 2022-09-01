@@ -4,3 +4,4 @@ schemaspy/.DS_Store
 .DS_Store
 .vscode
 .env
+shell.nix
