@@ -1,4 +1,6 @@
-table! {
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
     agents (id) {
         id -> Int4,
         name -> Varchar,
@@ -6,7 +8,15 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
+    email_confirmations (id) {
+        id -> Int4,
+        code -> Int4,
+        expiration_date -> Date,
+    }
+}
+
+diesel::table! {
     lambdas (id) {
         id -> Int4,
         aws_lambda_region -> Varchar,
@@ -15,7 +25,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     metrics (id) {
         id -> Int4,
         load_average_1 -> Nullable<Varchar>,
@@ -29,7 +39,7 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     monitors (id) {
         id -> Int4,
         name -> Varchar,
@@ -45,14 +55,14 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     organizations (id) {
         id -> Int4,
         name -> Varchar,
     }
 }
 
-table! {
+diesel::table! {
     organizations_users (id) {
         id -> Int4,
         id_organization -> Nullable<Int4>,
@@ -60,14 +70,14 @@ table! {
     }
 }
 
-table! {
+diesel::table! {
     roles (id) {
         id -> Int4,
         name -> Varchar,
     }
 }
 
-table! {
+diesel::table! {
     users (id) {
         id -> Uuid,
         email -> Varchar,
@@ -77,11 +87,21 @@ table! {
     }
 }
 
-joinable!(monitors -> lambdas (id_lambda));
-joinable!(users -> roles (id_role));
+diesel::table! {
+    users_email_confirmations (id) {
+        id -> Int4,
+        id_user -> Nullable<Uuid>,
+        id_email_confirmation -> Nullable<Int4>,
+    }
+}
 
-allow_tables_to_appear_in_same_query!(
+diesel::joinable!(monitors -> lambdas (id_lambda));
+diesel::joinable!(users -> roles (id_role));
+diesel::joinable!(users_email_confirmations -> email_confirmations (id_email_confirmation));
+
+diesel::allow_tables_to_appear_in_same_query!(
     agents,
+    email_confirmations,
     lambdas,
     metrics,
     monitors,
@@ -89,4 +109,5 @@ allow_tables_to_appear_in_same_query!(
     organizations_users,
     roles,
     users,
+    users_email_confirmations,
 );

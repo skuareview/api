@@ -28,7 +28,7 @@ pub async fn login(pool: web::Data<DbPool>, user: web::Json<Login>) -> Result<Ht
     .await?
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Created().json(user))
+    Ok(HttpResponse::Ok().json(user))
 }
 
 #[get("/user_informations")]
@@ -46,4 +46,18 @@ pub async fn user_informations(
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(user))
+}
+
+#[post("/email_confirmation")]
+pub async fn email_confirmation(
+    _req: HttpRequest,
+    pool: web::Data<DbPool>,
+    _: AuthorizationService,
+) -> Result<HttpResponse, Error> {
+    let token = User::get_token_from_request(&_req);
+    let conn = pool.get().unwrap();
+    let resp = User::email_confirmation(&token, &conn)
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
+    Ok(HttpResponse::Ok().json(resp))
 }

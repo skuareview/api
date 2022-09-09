@@ -1,14 +1,17 @@
 use crate::diesel::RunQueryDsl;
 use crate::roles::model::Role;
+use crate::schema::email_confirmations;
 use crate::schema::users;
+use crate::services::email;
 use crate::services::response::{CustomResponse, LoginResponse, UserResponse};
-use actix_web::{get, post, web, Error, HttpRequest, HttpResponse};
-use chrono::{DateTime, Duration, Utc};
+use actix_web::HttpRequest;
+use chrono::{Duration, Utc};
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use diesel::prelude::*;
 use diesel::{AsChangeset, Queryable};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -31,6 +34,14 @@ pub struct InsertableUser {
     pub email: String,
     pub password: String,
     pub id_role: i32,
+}
+
+#[derive(Serialize, Clone, Deserialize, Debug, Insertable)]
+#[table_name = "email_confirmations"]
+pub struct InsertableEmailConfirmations {
+    pub id: i32,
+    pub code: i32,
+    pub expiration_date: chrono::NaiveDate,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -124,42 +135,77 @@ impl User {
         }
     }
 
-    pub fn get_user_informations(
-        token: &str,
-        conn: &PgConnection,
-    ) -> Result<UserResponse, DbError> {
+    pub fn get_user_from_token(token: &str, conn: &PgConnection) -> Option<User> {
         let key = std::env::var("SECRET_TOKEN").expect("SECRET_TOKEN");
         let _decode = decode::<Claims>(
             token,
             &DecodingKey::from_secret(key.as_bytes()),
             &Validation::new(Algorithm::HS256),
         );
+
         match _decode {
             Ok(decoded) => {
                 match User::find_user_with_email(
                     (decoded.claims.sub.to_string()).parse().unwrap(),
                     conn,
                 ) {
-                    Some(user) => Ok(UserResponse {
-                        status: true,
-                        user: Some(user),
-                    }),
-                    None => Ok(UserResponse {
-                        status: false,
-                        user: None,
-                    }),
+                    Some(user) => return Some(user),
+                    None => return None,
                 }
             }
-            Err(_) => Ok(UserResponse {
+            Err(_) => return None,
+        }
+    }
+
+    pub fn get_user_informations(
+        token: &str,
+        conn: &PgConnection,
+    ) -> Result<UserResponse, DbError> {
+        match User::get_user_from_token(&token, &conn) {
+            Some(user) => Ok(UserResponse {
+                status: true,
+                user: Some(user),
+            }),
+            None => Ok(UserResponse {
                 status: false,
                 user: None,
             }),
         }
     }
+
     pub fn hash_pw(password: String) -> String {
         let mut sha = Sha256::new();
         sha.input_str(&password);
         return sha.result_str();
+    }
+
+    pub async fn email_confirmation(
+        token: &str,
+        conn: &PgConnection,
+    ) -> Result<CustomResponse, DbError> {
+        match User::get_user_from_token(&token, &conn) {
+            Some(user) => {
+                // Generate code + expiration date (store bdd)
+                let mut rng = rand::thread_rng();
+                let random: i16 = rng.gen::<i16>();
+                let date = Utc::now() + Duration::minutes(30);
+
+                // Send email with the code
+                email::send_confirmation_email(user.email, random)
+                    .await
+                    .unwrap();
+                return Ok(CustomResponse {
+                    status: true,
+                    message: "Email send".to_owned(),
+                });
+            }
+            None => {
+                return Ok(CustomResponse {
+                    status: false,
+                    message: "token expired".to_owned(),
+                })
+            }
+        }
     }
 }
 
