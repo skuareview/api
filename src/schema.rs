@@ -12,7 +12,7 @@ diesel::table! {
     email_confirmations (id) {
         id -> Int4,
         code -> Int4,
-        expiration_date -> Date,
+        expiration_date -> Timestamp,
     }
 }
 

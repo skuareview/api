@@ -11,7 +11,7 @@ use crypto::sha2::Sha256;
 use diesel::prelude::*;
 use diesel::{AsChangeset, Queryable};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use rand::Rng;
+use rand::{thread_rng, Rng};
 use serde_derive::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -39,9 +39,9 @@ pub struct InsertableUser {
 #[derive(Serialize, Clone, Deserialize, Debug, Insertable)]
 #[table_name = "email_confirmations"]
 pub struct InsertableEmailConfirmations {
-    pub id: i32,
+    // pub id: i32,
     pub code: i32,
-    pub expiration_date: chrono::NaiveDate,
+    pub expiration_date: chrono::NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -187,8 +187,19 @@ impl User {
             Some(user) => {
                 // Generate code + expiration date (store bdd)
                 let mut rng = rand::thread_rng();
-                let random: i16 = rng.gen::<i16>();
+                let random: i32 = rng.gen_range(1000000..9999999);
                 let date = Utc::now() + Duration::minutes(30);
+                use crate::schema::email_confirmations::dsl::*;
+
+                let insertable_mail_confirmation = InsertableEmailConfirmations {
+                    code: random,
+                    expiration_date: date.naive_local(),
+                };
+
+                // Insert into database
+                diesel::insert_into(email_confirmations)
+                    .values(insertable_mail_confirmation.clone())
+                    .execute(conn)?;
 
                 // Send email with the code
                 email::send_confirmation_email(user.email, random)

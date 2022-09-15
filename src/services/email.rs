@@ -6,7 +6,7 @@ use rusoto_ses::{RawMessage, SendRawEmailError, SendRawEmailRequest, Ses, SesCli
 
 pub async fn send_confirmation_email(
     to: String,
-    code: i16,
+    code: i32,
 ) -> Result<(), RusotoError<SendRawEmailError>> {
     let sesclient = SesClient::new(Region::EuWest3);
     let data_email = MessageBuilder::new()

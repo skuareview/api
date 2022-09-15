@@ -32,17 +32,17 @@ pub struct InsertableMetric {
 }
 
 impl InsertableMetric {
-    fn from_metric(metric: Metric) -> InsertableMetric {
-        InsertableMetric {
-            load_average_1: metric.load_average_1,
-            load_average_2: metric.load_average_2,
-            load_average_3: metric.load_average_3,
-            memory_used: metric.memory_used,
-            memory_total: metric.memory_total,
-            cpu_temp: metric.cpu_temp,
-            cpu_load: metric.cpu_load,
-        }
-    }
+    // fn from_metric(metric: Metric) -> InsertableMetric {
+    //     InsertableMetric {
+    //         load_average_1: metric.load_average_1,
+    //         load_average_2: metric.load_average_2,
+    //         load_average_3: metric.load_average_3,
+    //         memory_used: metric.memory_used,
+    //         memory_total: metric.memory_total,
+    //         cpu_temp: metric.cpu_temp,
+    //         cpu_load: metric.cpu_load,
+    //     }
+    // }
 }
 
 impl Metric {

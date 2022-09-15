@@ -29,12 +29,12 @@ pub struct AgentName {
 }
 
 impl InsertableAgent {
-    fn from_agent(agent: Agent) -> InsertableAgent {
-        InsertableAgent {
-            name: agent.name,
-            token: agent.token,
-        }
-    }
+    // fn from_agent(agent: Agent) -> InsertableAgent {
+    //     InsertableAgent {
+    //         name: agent.name,
+    //         token: agent.token,
+    //     }
+    // }
 }
 
 impl Agent {

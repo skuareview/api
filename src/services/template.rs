@@ -1,7 +1,7 @@
 use handlebars::Handlebars;
 use serde_json::json;
 
-pub fn confirmation_email(code: i16) -> String {
+pub fn confirmation_email(code: i32) -> String {
     let mut handlebars = Handlebars::new();
     handlebars
         .register_template_file("alert", "templates/confirmation_email.hbs")
