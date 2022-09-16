@@ -11,7 +11,7 @@ use crypto::sha2::Sha256;
 use diesel::prelude::*;
 use diesel::{AsChangeset, Queryable};
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -39,7 +39,16 @@ pub struct InsertableUser {
 #[derive(Serialize, Clone, Deserialize, Debug, Insertable)]
 #[table_name = "email_confirmations"]
 pub struct InsertableEmailConfirmations {
-    // pub id: i32,
+    pub id_user: Uuid,
+    pub code: i32,
+    pub expiration_date: chrono::NaiveDateTime,
+}
+
+#[derive(Serialize, Clone, Deserialize, Debug, Queryable, AsChangeset)]
+#[table_name = "email_confirmations"]
+pub struct EmailConfirmations {
+    pub id: i32,
+    pub id_user: Uuid,
     pub code: i32,
     pub expiration_date: chrono::NaiveDateTime,
 }
@@ -192,6 +201,7 @@ impl User {
                 use crate::schema::email_confirmations::dsl::*;
 
                 let insertable_mail_confirmation = InsertableEmailConfirmations {
+                    id_user: user.id,
                     code: random,
                     expiration_date: date.naive_local(),
                 };
@@ -205,6 +215,43 @@ impl User {
                 email::send_confirmation_email(user.email, random)
                     .await
                     .unwrap();
+                return Ok(CustomResponse {
+                    status: true,
+                    message: "Email send".to_owned(),
+                });
+            }
+            None => {
+                return Ok(CustomResponse {
+                    status: false,
+                    message: "token expired".to_owned(),
+                })
+            }
+        }
+    }
+    pub fn verify_email_confirmation(
+        token: &str,
+        conn: &PgConnection,
+    ) -> Result<CustomResponse, DbError> {
+        // return Ok(CustomResponse {
+        //     status: false,
+        //     message: "token expired".to_owned(),
+        // });
+        match User::get_user_from_token(&token, &conn) {
+            Some(user) => {
+                use crate::schema::email_confirmations::dsl::*;
+                let email_confirmation = email_confirmations
+                    .filter(id_user.eq(user.id))
+                    .select((id, id_user, code, expiration_date))
+                    .load::<EmailConfirmations>(conn)
+                    .unwrap();
+
+                println!("{:?}", email_confirmation);
+
+                // if user.len() > 0 {
+                //     return Some(user[0].clone());
+                // } else {
+                //     return None;
+                // }
                 return Ok(CustomResponse {
                     status: true,
                     message: "Email send".to_owned(),

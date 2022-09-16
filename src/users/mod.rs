@@ -48,7 +48,7 @@ pub async fn user_informations(
     Ok(HttpResponse::Ok().json(user))
 }
 
-#[post("/email_confirmation")]
+#[get("/email_confirmation")]
 pub async fn email_confirmation(
     _req: HttpRequest,
     pool: web::Data<DbPool>,
@@ -59,5 +59,21 @@ pub async fn email_confirmation(
     let resp = User::email_confirmation(&token, &conn)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
+    Ok(HttpResponse::Ok().json(resp))
+}
+
+#[post("/verify_email_confirmation")]
+pub async fn verify_email_confirmation(
+    _req: HttpRequest,
+    pool: web::Data<DbPool>,
+    _: AuthorizationService,
+) -> Result<HttpResponse, Error> {
+    let token = User::get_token_from_request(&_req);
+    let resp = web::block(move || {
+        let conn = pool.get()?;
+        User::verify_email_confirmation(&token, &conn)
+    })
+    .await?
+    .map_err(actix_web::error::ErrorInternalServerError)?;
     Ok(HttpResponse::Ok().json(resp))
 }

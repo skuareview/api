@@ -11,6 +11,7 @@ diesel::table! {
 diesel::table! {
     email_confirmations (id) {
         id -> Int4,
+        id_user -> Uuid,
         code -> Int4,
         expiration_date -> Timestamp,
     }
@@ -87,17 +88,8 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    users_email_confirmations (id) {
-        id -> Int4,
-        id_user -> Nullable<Uuid>,
-        id_email_confirmation -> Nullable<Int4>,
-    }
-}
-
 diesel::joinable!(monitors -> lambdas (id_lambda));
 diesel::joinable!(users -> roles (id_role));
-diesel::joinable!(users_email_confirmations -> email_confirmations (id_email_confirmation));
 
 diesel::allow_tables_to_appear_in_same_query!(
     agents,
@@ -109,5 +101,4 @@ diesel::allow_tables_to_appear_in_same_query!(
     organizations_users,
     roles,
     users,
-    users_email_confirmations,
 );

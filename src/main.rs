@@ -45,13 +45,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // set up DB pool to be used with web::Data<Pool> extractor
             .app_data(web::Data::new(pool.clone()))
-            // .wrap(middleware::Compress::new(ContentEncoding::Br))
             .wrap(middleware::Logger::default())
             .route("/", web::get().to(index))
             .service(metrics::add_metrics)
             .service(organizations::add_organization)
             .service(monitors::add_monitor)
-            // .service(monitors::get_all_monitors_of_user)
             .service(agents::add_agents)
             .service(roles::add_role)
             .service(roles::get_roles)
@@ -59,6 +57,7 @@ async fn main() -> std::io::Result<()> {
             .service(users::login)
             .service(users::email_confirmation)
             .service(users::user_informations)
+            .service(users::verify_email_confirmation)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
