@@ -3,6 +3,10 @@ services:
 
   api:
     container_name: api
+    init: true
+    privileged: true 
+    devices: 
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     env_file:
       - .env
     build:

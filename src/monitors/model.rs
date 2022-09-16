@@ -1,88 +1,111 @@
-use crate::diesel::RunQueryDsl;
-use crate::schema::monitors;
-use diesel::prelude::*;
-use diesel::{AsChangeset, Queryable};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
+use std::io::prelude::*;
+use std::fs;
+use std::fs::File;
+use std::path::Path;
+use log::{info, error, debug};
 use uuid::Uuid;
+use actix_web::web;
+use std::process::Command;
 
-type DbError = Box<dyn std::error::Error + Send + Sync>;
-
-#[derive(Serialize, Deserialize, Queryable, AsChangeset, Insertable)]
-#[table_name = "monitors"]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Monitor {
-    pub id: i32,
-    pub id_agent: Option<i32>,
-    pub id_lambda: Option<i32>,
-    pub id_user: Uuid,
-    pub id_organization: Option<i32>,
-    pub name: String,
-    pub aws_eventbridge_region: String,
-    pub aws_eventbridge_name: String,
-    pub aws_eventbridge_description: String,
-    pub aws_eventbridge_event_bus_name: String,
-    pub aws_eventbridge_schedule_expression: String,
+    pub user_uuid: String,
+    pub url: String,
+    pub inactive_sec: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Insertable, Queryable)]
-#[table_name = "monitors"]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct InsertableMonitor {
-    pub id_agent: Option<i32>,
-    pub id_lambda: Option<i32>,
-    pub id_user: Uuid,
-    pub id_organization: Option<i32>,
-    pub name: String,
-    pub aws_eventbridge_region: String,
-    pub aws_eventbridge_name: String,
-    pub aws_eventbridge_description: String,
-    pub aws_eventbridge_event_bus_name: String,
-    pub aws_eventbridge_schedule_expression: String,
-}
-
-#[derive(Debug, Clone, Serialize, Queryable, Deserialize, Insertable)]
-#[table_name = "monitors"]
-pub struct FormMonitor {
-    pub name: String,
-    pub id_organization: Option<i32>,
-    pub id_agent: Option<i32>,
+    pub monitor: Monitor,
+    pub monitor_uuid: Uuid,
 }
 
 impl Monitor {
-    pub fn insert_new_monitor(
-        token: &str,
-        form: &FormMonitor,
-        conn: &PgConnection,
-    ) -> Result<InsertableMonitor, DbError> {
-        use crate::schema::monitors::dsl::*;
-        let uid = crate::users::model::User::get_uid_from_token(token, conn);
-        let monitor = InsertableMonitor {
-            name: form.name.clone(),
-            aws_eventbridge_region: "wip".to_owned(),
-            aws_eventbridge_name: "wip".to_owned(),
-            aws_eventbridge_description: "wip".to_owned(),
-            aws_eventbridge_event_bus_name: "wip".to_owned(),
-            aws_eventbridge_schedule_expression: "wip".to_owned(),
-            id_agent: form.id_agent,
-            id_lambda: None,
-            id_user: uid.unwrap(),
-            id_organization: form.id_organization,
-        };
-        diesel::insert_into(monitors)
-            .values(&monitor)
-            .execute(conn)?;
-
-        Ok(monitor)
+    // TODO: Maybe put this at the start of the api 
+    fn check_systemd_units_path(path: &String) -> std::io::Result<()> { 
+        match fs::create_dir_all(path) {
+            Ok(..) => {
+                info!("The {} path has been successfully created", path);
+                return Ok(())
+            },
+            Err(e) => {
+                error!("The {} path cannot be created", path);
+                return Err(e)
+            }
+        }
     }
-    // pub fn get_all_monitors_of_user(
-    //     token: &str,
-    //     conn: &PgConnection,
-    // ) -> Result<Vec<Monitor>, DbError> {
-    //     let uid = crate::users::model::User::get_uid_from_token(token, conn);
-    //     use crate::schema::monitors::dsl::*;
 
-    //     let all_monitors = monitors
-    //         .filter(id_user.eq(uid.unwrap()))
-    //         .load::<Monitor>(conn)
-    //         .unwrap();
-    //     Ok(all_monitors)
-    // }
+    fn write_systemd_file(path: &str, contents: &str) -> std::io::Result<()> {
+        match File::create(&path) {
+            Ok(mut file) => {
+                match file.write_all(contents.as_bytes()) {
+                    Ok(..) => {
+                        debug!("The file has been written");
+                        return Ok(())
+                    },
+                    Err(e) => {
+                        error!("Unable to write to the file");
+                        return Err(e)
+                    }
+                }
+            }
+            Err(e) => {
+                error!("Unable to create the file");
+                return Err(e)
+            }
+        };
+    }
+
+    pub fn contents_systemd_service(path: &String, insertable_monitor: &InsertableMonitor) -> std::io::Result<()> { 
+        let path = format!("{}/mon_{}.service", path, insertable_monitor.monitor_uuid);
+        let unit = format!("[Unit]\nDescription=Monitor owned by user {}\n\n", insertable_monitor.monitor.user_uuid);
+        let service = format!("[Service]\nType=oneshot\nExecStart={}\n\n", insertable_monitor.monitor.url);
+        let install = format!("[Install]\nWantedBy=multi-user.target");
+        let contents = format!("{}{}{}", &unit, &service, &install);
+
+        Monitor::write_systemd_file(&path, &contents)?;
+        Ok(())
+    }
+
+    pub fn contents_systemd_timer(path: &String, insertable_monitor: &InsertableMonitor) -> std::io::Result<()> { 
+        let path = format!("{}/mon_{}.timer", path, insertable_monitor.monitor_uuid);
+        let unit = format!("[Unit]\nDescription=Monitor owned by user {}\n\n", insertable_monitor.monitor.user_uuid);
+        let timer = format!("[Timer]\nOnStartupSec=1\nOnUnitInactiveSec={}\n\n", insertable_monitor.monitor.inactive_sec);
+        let install = format!("[Install]\nWantedBy=multi-user.target");
+        let contents = format!("{}{}{}", &unit, &timer, &install);
+
+        Monitor::write_systemd_file(&path, &contents)?;
+        Ok(())
+    }
+
+    pub fn systemd_timer_state(path: &String, insertable_monitor: &InsertableMonitor, state: &str) -> std::io::Result<()> { 
+        let timer = format!("{}/mon_{}.service", path, insertable_monitor.monitor_uuid);
+
+        Command::new("systemctl").args(["--user", state, "--now", &timer]).output().expect("Unable to start the timer");
+        Ok(())
+    }
+
+    pub fn write_new_monitor(monitor: web::Json<Monitor>) -> std::io::Result<()> { 
+        let path = String::from("/home/skuareview/.config/systemd/user");
+
+        // Create insertable monitor with new uuid
+        let insertable_monitor = InsertableMonitor {
+            monitor: monitor.into_inner(),
+            monitor_uuid: Uuid::new_v4()
+        };
+
+        // Check systemd units path
+        Monitor::check_systemd_units_path(&path)?;
+
+        // Create and write systemd service / timer contents
+        Monitor::contents_systemd_service(&path, &insertable_monitor)?;
+        Monitor::contents_systemd_timer(&path, &insertable_monitor)?;
+
+        // Start timer
+        Monitor::systemd_timer_state(&path, &insertable_monitor, "start")?;
+
+        Ok(())
+    }
+
 }
