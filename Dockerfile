@@ -7,7 +7,7 @@ COPY Cargo.toml .
 
 # Dependencies
 RUN apt-get -y update
-RUN apt-get -y install curl build-essential libpq-dev pkg-config netcat
+RUN apt-get -y install curl build-essential libpq-dev pkg-config netcat systemd
 
 # Rustup install (not yet packaged on Ubuntu)
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
